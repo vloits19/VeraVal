@@ -1,8 +1,8 @@
 /* ============================
-   AniTrack — App Constants
+   VeraVal — App Constants
    ============================ */
 
-export const APP_NAME = "AniTrack";
+export const APP_NAME = "VeraVal";
 export const APP_DESCRIPTION =
   "A simpler, cleaner way to track your anime journey.";
 export const APP_TAGLINE = "Track. Discover. Enjoy.";

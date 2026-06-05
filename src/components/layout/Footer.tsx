@@ -39,7 +39,7 @@ export function Footer() {
 
         {/* Copyright */}
         <p className="text-xs text-text-muted">
-          © {currentYear} AniTrack. All rights reserved.
+          © {currentYear} VeraVal. All rights reserved.
         </p>
       </div>
     </footer>

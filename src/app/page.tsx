@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
-  title: "AniTrack — Track Your Anime Journey",
+  title: "VeraVal — Track Your Anime Journey",
   description:
     "A simpler, cleaner alternative to MyAnimeList. Track, discover, and enjoy anime your way.",
 };

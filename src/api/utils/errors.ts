@@ -1,5 +1,5 @@
 /* ============================
-   AniTrack — API Error Utilities
+   VeraVal — API Error Utilities
    ============================ */
 
 export interface ApiError {

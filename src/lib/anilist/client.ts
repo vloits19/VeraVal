@@ -1,5 +1,5 @@
 /* ============================
-   AniTrack — AniList GraphQL API Client
+   VeraVal — AniList GraphQL API Client
    ============================ */
 
 const ANILIST_API_URL = "https://graphql.anilist.co";

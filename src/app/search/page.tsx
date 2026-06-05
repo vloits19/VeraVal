@@ -203,9 +203,10 @@ export default function SearchPage() {
                       src={coverImage}
                       alt={title}
                       fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                      quality={75}
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      unoptimized // Since AniList external URLs aren't in next.config.js by default
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-text-muted">

@@ -10,7 +10,7 @@ import { LoginForm } from "./LoginForm";
 
 export const metadata: Metadata = {
   title: "Log In",
-  description: "Log in to your AniTrack account to continue tracking your anime journey.",
+  description: "Log in to your VeraVal account to continue tracking your anime journey.",
 };
 
 export default async function LoginPage() {

@@ -66,7 +66,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
               <Link key={entry.id} href={`/anime/${anime.id}`} className="block h-full group">
                 <div className="relative aspect-[2/3] w-full rounded-[var(--radius-md)] overflow-hidden bg-bg-secondary mb-2 border border-border group-hover:border-accent transition-colors shadow-sm">
                   {coverImage && (
-                    <Image src={coverImage} alt={animeTitle} fill className="object-cover" unoptimized />
+                    <Image src={coverImage} alt={animeTitle} fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw" quality={75} className="object-cover" loading="lazy" />
                   )}
                   {/* Progress overlay */}
                   <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-1.5 text-center">
@@ -95,7 +95,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
       <div className="relative h-64 md:h-80 w-full bg-bg-secondary border-b border-border overflow-hidden">
         {profile.banner ? (
           <>
-            <Image src={profile.banner} alt={`${profile.username}'s banner`} fill className="object-cover" unoptimized priority />
+            <Image src={profile.banner} alt={`${profile.username}'s banner`} fill sizes="100vw" quality={75} className="object-cover" priority />
             <div className="absolute inset-0 bg-gradient-to-t from-bg-main to-transparent opacity-60" />
           </>
         ) : (
@@ -113,7 +113,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
             style={{ borderColor: 'var(--user-accent)' }}
           >
             {profile.avatar ? (
-              <Image src={profile.avatar} alt={profile.username} fill className="object-cover" unoptimized priority />
+              <Image src={profile.avatar} alt={profile.username} fill sizes="160px" quality={85} className="object-cover" priority />
             ) : (
               <span className="text-4xl md:text-5xl font-bold text-text-muted">
                 {profile.username.charAt(0).toUpperCase()}

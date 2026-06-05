@@ -18,12 +18,12 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "AniTrack — Track Your Anime Journey",
-    template: "%s | AniTrack",
+    default: "VeraVal — Track Your Anime Journey",
+    template: "%s | VeraVal",
   },
   description:
     "A simpler, cleaner alternative to MyAnimeList. Track, discover, and enjoy anime your way.",
-  keywords: ["anime", "tracker", "myanimelist", "anitrack", "anime list"],
+  keywords: ["anime", "tracker", "myanimelist", "veraval", "anime list"],
 };
 
 export default function RootLayout({

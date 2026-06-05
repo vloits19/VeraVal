@@ -14,7 +14,7 @@ export const ThemeContext = createContext<ThemeContextValue | undefined>(
   undefined
 );
 
-const STORAGE_KEY = "anitrack-theme";
+const STORAGE_KEY = "veraval-theme";
 
 function getStoredTheme(): Theme {
   if (typeof window === "undefined") return "dark";

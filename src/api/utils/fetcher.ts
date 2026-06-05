@@ -1,5 +1,5 @@
 /* ============================
-   AniTrack — Generic Fetch Wrapper
+   VeraVal — Generic Fetch Wrapper
    ============================ */
 
 interface FetchOptions extends RequestInit {

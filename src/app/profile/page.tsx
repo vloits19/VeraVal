@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 
 export const metadata: Metadata = {
   title: "Profile",
-  description: "View and manage your AniTrack anime profile and statistics.",
+  description: "View and manage your VeraVal anime profile and statistics.",
 };
 
 const STATS = [

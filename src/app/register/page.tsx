@@ -10,7 +10,7 @@ import { RegisterForm } from "./RegisterForm";
 
 export const metadata: Metadata = {
   title: "Create Account",
-  description: "Create your free AniTrack account and start tracking your anime.",
+  description: "Create your free VeraVal account and start tracking your anime.",
 };
 
 export default async function RegisterPage() {

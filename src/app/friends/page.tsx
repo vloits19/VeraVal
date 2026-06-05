@@ -73,7 +73,7 @@ export default async function FriendsPage() {
                 <Link href={`/user/${req.sender.username}`} className="flex items-center gap-3 group">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden bg-bg-secondary border-2 border-transparent group-hover:border-accent transition-colors" style={{ borderColor: req.sender.accent_color }}>
                     {req.sender.avatar ? (
-                      <Image src={req.sender.avatar} alt={req.sender.username} fill className="object-cover" unoptimized />
+                      <Image src={req.sender.avatar} alt={req.sender.username} fill sizes="48px" quality={80} className="object-cover" loading="lazy" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xl font-bold bg-bg-card">
                         {req.sender.username.charAt(0).toUpperCase()}
@@ -113,7 +113,7 @@ export default async function FriendsPage() {
                     {/* Favorite Anime Banner Preview */}
                     <div className="h-24 w-full bg-bg-secondary relative overflow-hidden">
                       {bannerImage ? (
-                        <Image src={bannerImage} alt="Favorite Anime" fill className="object-cover opacity-60 group-hover:opacity-80 transition-opacity" unoptimized />
+                        <Image src={bannerImage} alt="Favorite Anime" fill sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" quality={60} className="object-cover opacity-60 group-hover:opacity-80 transition-opacity" loading="lazy" />
                       ) : (
                         <div className="absolute inset-0" style={{ backgroundColor: f.user.accent_color || 'var(--accent)', opacity: 0.2 }} />
                       )}
@@ -124,7 +124,7 @@ export default async function FriendsPage() {
                     <div className="px-4 pb-4 -mt-8 relative z-10 flex flex-col items-center">
                       <div className="relative w-16 h-16 rounded-full overflow-hidden bg-bg-card border-4 border-bg-card shadow-md" style={{ borderColor: f.user.accent_color || 'var(--bg-card)' }}>
                         {f.user.avatar ? (
-                          <Image src={f.user.avatar} alt={f.user.username} fill className="object-cover" unoptimized />
+                          <Image src={f.user.avatar} alt={f.user.username} fill sizes="64px" quality={80} className="object-cover" loading="lazy" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-2xl font-bold bg-bg-secondary text-text-primary">
                             {f.user.username.charAt(0).toUpperCase()}

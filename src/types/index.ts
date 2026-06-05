@@ -1,5 +1,5 @@
 /* ============================
-   AniTrack — Shared TypeScript Types
+   VeraVal — Shared TypeScript Types
    ============================ */
 
 /** User profile (matches public.users table) */

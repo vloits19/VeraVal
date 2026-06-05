@@ -130,7 +130,7 @@ export default function ProfileSettingsPage() {
                 onClick={() => bannerInputRef.current?.click()}
               >
                 {formData.banner ? (
-                  <Image src={formData.banner} alt="Banner" fill className="object-cover" unoptimized />
+                  <Image src={formData.banner} alt="Banner" fill sizes="100%" quality={75} className="object-cover" />
                 ) : (
                   <span className="text-sm text-text-muted">Click to upload banner</span>
                 )}
@@ -152,7 +152,7 @@ export default function ProfileSettingsPage() {
                   onClick={() => avatarInputRef.current?.click()}
                 >
                   {formData.avatar ? (
-                    <Image src={formData.avatar} alt="Avatar" fill className="object-cover" unoptimized />
+                    <Image src={formData.avatar} alt="Avatar" fill sizes="96px" quality={85} className="object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-text-muted bg-bg-card">
                       {profile.username.charAt(0).toUpperCase()}
@@ -245,7 +245,7 @@ export default function ProfileSettingsPage() {
               {/* Banner */}
               <div className="h-24 w-full bg-bg-input relative">
                 {formData.banner && (
-                  <Image src={formData.banner} alt="Banner" fill className="object-cover" unoptimized />
+                  <Image src={formData.banner} alt="Banner" fill sizes="320px" quality={60} className="object-cover" />
                 )}
               </div>
               
@@ -253,7 +253,7 @@ export default function ProfileSettingsPage() {
                 {/* Avatar */}
                 <div className="relative w-16 h-16 -mt-8 mb-3 rounded-full border-4 border-bg-secondary bg-bg-card overflow-hidden" style={{ borderColor: 'var(--preview-accent)' }}>
                   {formData.avatar ? (
-                    <Image src={formData.avatar} alt="Avatar" fill className="object-cover" unoptimized />
+                    <Image src={formData.avatar} alt="Avatar" fill sizes="64px" quality={80} className="object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-lg font-bold text-text-muted">
                       {profile.username.charAt(0).toUpperCase()}

@@ -1,5 +1,5 @@
 /* ============================
-   AniTrack — Auth Form Validation
+   VeraVal — Auth Form Validation
    ============================ */
 
 export interface ValidationResult {

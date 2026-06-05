@@ -54,8 +54,8 @@ export function Logo({ size = "md", showText = true, className = "" }: LogoProps
       {/* Wordmark */}
       {showText && (
         <span className={`font-bold tracking-tight ${text}`}>
-          <span className="text-text-primary">Ani</span>
-          <span className="text-accent">Track</span>
+        <span className="text-text-primary">Vera</span>
+          <span className="text-accent">Val</span>
         </span>
       )}
     </div>

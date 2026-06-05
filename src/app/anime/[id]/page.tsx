@@ -48,8 +48,9 @@ export default async function AnimeDetailsPage({ params }: { params: Promise<{ i
               src={bannerImage}
               alt="Banner"
               fill
+              sizes="100vw"
+              quality={75}
               className="object-cover opacity-60"
-              unoptimized
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-bg-main to-transparent" />
@@ -65,7 +66,7 @@ export default async function AnimeDetailsPage({ params }: { params: Promise<{ i
           <div className="w-full md:w-64 flex-shrink-0 space-y-6">
             <div className="relative aspect-[2/3] w-48 md:w-full rounded-[var(--radius-lg)] overflow-hidden shadow-xl border-4 border-bg-main bg-bg-secondary mx-auto md:mx-0">
               {coverImage ? (
-                <Image src={coverImage} alt={title} fill className="object-cover" unoptimized priority />
+                <Image src={coverImage} alt={title} fill sizes="(max-width: 768px) 192px, 256px" quality={85} className="object-cover" priority />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-text-muted">No Image</div>
               )}

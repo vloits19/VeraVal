@@ -68,7 +68,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ usern
                 <Card hover glow padding="none" className="overflow-hidden h-full flex flex-col group border-transparent hover:border-accent/50">
                   <div className="relative aspect-[2/3] w-full bg-bg-secondary">
                     {coverImage && (
-                      <Image src={coverImage} alt={title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
+                      <Image src={coverImage} alt={title} fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw" quality={75} className="object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
                     )}
                     <div className="absolute bottom-0 inset-x-0 bg-black/80 backdrop-blur-md p-2">
                       <p className="text-xs font-bold text-white text-center tracking-wider">

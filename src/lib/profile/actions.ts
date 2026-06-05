@@ -11,6 +11,12 @@ export async function updateProfile(data: Partial<User>) {
   if (!user) throw new Error("Not authenticated");
   
   const { username, avatar, banner, bio, accent_color } = data;
+  
+  // Strict Validation to prevent database bloat
+  if (bio && bio.length > 500) throw new Error("Bio must be 500 characters or less");
+  if (username && username.length > 20) throw new Error("Username must be 20 characters or less");
+  if (username && username.length < 3) throw new Error("Username must be at least 3 characters");
+
   const updates = Object.fromEntries(
     Object.entries({ username, avatar, banner, bio, accent_color }).filter(([k, v]) => v !== undefined && k)
   );

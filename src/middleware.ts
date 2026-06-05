@@ -1,7 +1,46 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
+// In-memory rate limiting store (cleared on server restart or Edge eviction)
+// Useful for basic single-instance DoS protection.
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+// Cleanup old entries every 5 minutes to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, data] of rateLimitMap.entries()) {
+    if (now > data.resetTime) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}, 5 * 60 * 1000);
+
 export async function middleware(request: NextRequest) {
+  // 1. Rate Limiting for Mutations (POST requests)
+  if (request.method === "POST") {
+    // Get IP from headers (works on Vercel/proxies) or fallback to generic
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0] ||
+      request.headers.get("x-real-ip") ||
+      "unknown-ip";
+
+    const now = Date.now();
+    const windowMs = 60 * 1000; // 1 minute window
+    const maxRequests = 30; // Max 30 POST requests per minute per IP
+
+    const record = rateLimitMap.get(ip);
+
+    if (!record || now > record.resetTime) {
+      rateLimitMap.set(ip, { count: 1, resetTime: now + windowMs });
+    } else {
+      record.count++;
+      if (record.count > maxRequests) {
+        return new NextResponse("Too Many Requests", { status: 429 });
+      }
+    }
+  }
+
+  // 2. Supabase Session Management
   return await updateSession(request);
 }
 

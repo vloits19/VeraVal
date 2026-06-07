@@ -17,6 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://vera-val.fayq.my.id"),
   title: {
     default: "VeraVal — Track Your Anime Journey",
     template: "%s | VeraVal",
@@ -26,6 +27,19 @@ export const metadata: Metadata = {
   keywords: ["anime", "tracker", "myanimelist", "veraval", "anime list"],
   icons: {
     icon: "/VeraValIcon.svg",
+  },
+  openGraph: {
+    title: "VeraVal — Track Your Anime Journey",
+    description: "A simpler, cleaner alternative to MyAnimeList. Track, discover, and enjoy anime your way.",
+    url: "https://vera-val.fayq.my.id",
+    siteName: "VeraVal",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "VeraVal — Track Your Anime Journey",
+    description: "A simpler, cleaner alternative to MyAnimeList. Track, discover, and enjoy anime your way.",
   },
 };
 

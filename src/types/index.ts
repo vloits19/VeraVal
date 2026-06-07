@@ -16,6 +16,7 @@ export interface User {
     notify_episodes: boolean;
     notify_recommendations: boolean;
     notify_social: boolean;
+    friend_banner_anime_id?: number | null;
   };
   created_at: string;
 }

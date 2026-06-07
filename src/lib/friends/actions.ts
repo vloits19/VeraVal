@@ -197,7 +197,7 @@ export async function getFriendsList() {
     .from("friends")
     .select(`
       id,
-      users!friends_user2_id_fkey(id, username, avatar, accent_color, last_active, role)
+      users!friends_user2_id_fkey(id, username, avatar, accent_color, last_active, role, preferences)
     `)
     .eq("user1_id", user.id);
 
@@ -205,7 +205,7 @@ export async function getFriendsList() {
     .from("friends")
     .select(`
       id,
-      users!friends_user1_id_fkey(id, username, avatar, accent_color, last_active, role)
+      users!friends_user1_id_fkey(id, username, avatar, accent_color, last_active, role, preferences)
     `)
     .eq("user2_id", user.id);
 

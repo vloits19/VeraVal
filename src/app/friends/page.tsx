@@ -28,18 +28,25 @@ export default async function FriendsPage() {
   const animeIdsToFetch = new Set<number>();
 
   for (const f of friends) {
-    const { data } = await supabase
-      .from("anime_lists")
-      .select("anime_id")
-      .eq("user_id", f.user.id)
-      .eq("is_favorite", true)
-      .order("favorite_order", { ascending: true, nullsFirst: false })
-      .limit(1)
-      .single();
+    const bannerAnimeId = f.user.preferences?.friend_banner_anime_id;
 
-    if (data) {
-      friendAnimeMap.set(f.user.id, data.anime_id);
-      animeIdsToFetch.add(data.anime_id);
+    if (bannerAnimeId) {
+      friendAnimeMap.set(f.user.id, bannerAnimeId);
+      animeIdsToFetch.add(bannerAnimeId);
+    } else {
+      const { data } = await supabase
+        .from("anime_lists")
+        .select("anime_id")
+        .eq("user_id", f.user.id)
+        .eq("is_favorite", true)
+        .order("favorite_order", { ascending: true, nullsFirst: false })
+        .limit(1)
+        .single();
+
+      if (data) {
+        friendAnimeMap.set(f.user.id, data.anime_id);
+        animeIdsToFetch.add(data.anime_id);
+      }
     }
   }
 

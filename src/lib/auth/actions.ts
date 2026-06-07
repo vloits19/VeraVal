@@ -20,6 +20,9 @@ export async function registerUser(formData: {
 }): Promise<AuthFormState> {
   try {
     console.log("[REGISTER_USER] Starting register for:", formData.email);
+    console.log("DEBUG [Registration] Raw Password:", `"${formData.password}"`);
+    console.log("DEBUG [Registration] Raw Confirm Password:", `"${formData.confirmPassword}"`);
+    
     // 1. Validate
     const { valid, errors } = validateRegisterForm(formData);
     if (!valid) {

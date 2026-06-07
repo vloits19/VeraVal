@@ -24,6 +24,19 @@ export function RegisterForm() {
     const password = formData.get("password") as string;
     const confirmPassword = formData.get("confirmPassword") as string;
 
+    // Client-side quick validation for passwords
+    if (password !== confirmPassword) {
+      setFieldErrors({ confirmPassword: "Passwords do not match." });
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 8) {
+      setFieldErrors({ password: "Password must be at least 8 characters." });
+      setLoading(false);
+      return;
+    }
+
     const result = await registerUser({ username, email, password, confirmPassword });
 
     if (result.success) {

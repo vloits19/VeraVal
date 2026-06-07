@@ -248,3 +248,52 @@ export async function signInWithGoogle() {
     throw new Error(error.message);
   }
 }
+
+/**
+ * Complete the onboarding profile for OAuth users.
+ */
+export async function completeOnboarding(formData: {
+  username: string;
+  email: string;
+  avatar: string;
+}): Promise<AuthFormState> {
+  try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { success: false, error: "Not authenticated", fieldErrors: {} };
+    }
+
+    // Basic validation
+    const username = formData.username.trim();
+    if (!username || username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      return { success: false, error: null, fieldErrors: { username: "Invalid username format." } };
+    }
+
+    const { error: profileError } = await supabase.from("users").insert({
+      id: user.id,
+      username: username,
+      email: formData.email || user.email,
+      avatar: formData.avatar || "",
+      banner: "",
+      bio: "",
+      accent_color: "#7c3aed",
+    });
+
+    if (profileError) {
+      console.error("[ONBOARDING] Profile creation error:", profileError);
+      let errorMessage = "Failed to create profile. Please try again.";
+      if (profileError.message?.includes("unique constraint")) {
+        errorMessage = "Username is already taken.";
+        return { success: false, error: null, fieldErrors: { username: errorMessage } };
+      }
+      return { success: false, error: errorMessage, fieldErrors: {} };
+    }
+
+    return { success: true, error: null, fieldErrors: {} };
+  } catch (err: unknown) {
+    console.error("[ONBOARDING] exception:", err);
+    return { success: false, error: "An unexpected error occurred.", fieldErrors: {} };
+  }
+}

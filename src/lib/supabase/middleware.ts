@@ -52,16 +52,46 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith(route)
   );
 
-  if (isProtectedRoute && !user) {
+  // Helper to persist cookies set during the session refresh
+  const createRedirect = (path: string) => {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/login";
-    return NextResponse.redirect(redirectUrl);
+    redirectUrl.pathname = path;
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie.name, cookie.value);
+    });
+    return redirectResponse;
+  };
+
+  if (user) {
+    // Optimization: Avoid hitting the database on auth callback route
+    if (!request.nextUrl.pathname.startsWith("/auth/callback")) {
+      const { data: profile } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+      
+      const hasProfile = !!profile;
+
+      // Force user to complete onboarding if profile doesn't exist
+      if (!hasProfile && request.nextUrl.pathname !== "/onboarding") {
+        return createRedirect("/onboarding");
+      }
+
+      // Prevent user from accessing onboarding if profile already exists
+      if (hasProfile && request.nextUrl.pathname === "/onboarding") {
+        return createRedirect("/");
+      }
+    }
   }
 
-  if (isAuthRoute && user) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/";
-    return NextResponse.redirect(redirectUrl);
+  if (isProtectedRoute && !user) {
+    return createRedirect("/login");
+  }
+
+  if (isAuthRoute && user && request.nextUrl.pathname !== "/onboarding") {
+    return createRedirect("/");
   }
 
   return supabaseResponse;

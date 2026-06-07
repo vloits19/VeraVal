@@ -25,7 +25,7 @@ export function AnimeEntryManager({ animeId, totalEpisodes, initialEntry }: Anim
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const [status, setStatus] = useState(initialEntry?.status || "plan_to_watch");
+  const [status, setStatus] = useState<string>(initialEntry?.status || "plan_to_watch");
   const [progress, setProgress] = useState(initialEntry?.progress || 0);
   // Using 'any' for new fields since AnimeListEntry type might not have them yet
   const [score, setScore] = useState((initialEntry as any)?.score || 0);

@@ -1,10 +1,12 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAnimeById, getCoverImage, formatScore, formatStatus, formatMediaFormat } from "@/lib/anilist/client";
+import { getAnimeById, getCoverImage, formatScore, formatStatus, formatMediaFormat, getTitle } from "@/lib/anilist/client";
 import { getAnimeStatus } from "@/lib/anime/actions";
 import { AnimeEntryManager } from "@/components/anime/AnimeEntryManager";
 import { AnimeShowcasePin } from "@/components/anime/AnimeShowcasePin";
+import { AnimeCard } from "@/components/anime/AnimeCard";
 
 export default async function AnimeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -144,12 +146,13 @@ export default async function AnimeDetailsPage({ params }: { params: Promise<{ i
             {/* Genres */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
               {anime.genres.map((genre: string) => (
-                <span
+                <Link
                   key={genre}
-                  className="px-3 py-1 text-xs font-medium bg-accent/10 text-accent rounded-[var(--radius-full)]"
+                  href={`/search?genres=${encodeURIComponent(genre)}`}
+                  className="px-3 py-1 text-xs font-medium bg-accent/10 text-accent rounded-[var(--radius-full)] hover:bg-accent hover:text-white transition-colors"
                 >
                   {genre}
-                </span>
+                </Link>
               ))}
             </div>
 
@@ -160,6 +163,71 @@ export default async function AnimeDetailsPage({ params }: { params: Promise<{ i
                 {cleanDescription}
               </p>
             </div>
+
+            {/* Related Anime */}
+            {anime.relations && anime.relations.edges && anime.relations.edges.length > 0 && (
+              <div className="pt-8">
+                <h3 className="text-xl font-bold text-text-primary mb-4">Related Anime</h3>
+                <div className="flex overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 snap-x snap-mandatory hide-scrollbar">
+                  {anime.relations.edges
+                    .filter((edge) => edge.node.type === 'ANIME')
+                    .slice(0, 12).map((edge) => {
+                    const related = edge.node;
+                    const rTitle = getTitle(related.title);
+                    const rCover = getCoverImage(related.coverImage);
+                    const rScore = formatScore(related.averageScore);
+                    const rFormat = formatMediaFormat(related.format);
+                    
+                    return (
+                      <div key={`rel-${related.id}`} className="min-w-[140px] w-[140px] md:w-auto snap-start flex-shrink-0">
+                        <AnimeCard
+                          id={related.id}
+                          title={rTitle}
+                          coverImage={rCover}
+                          score={rScore}
+                          formatStr={rFormat}
+                          primaryGenre={edge.relationType.replace(/_/g, " ")} // Show relation type
+                          episodesOrStatus={related.episodes ? `${related.episodes} eps` : formatStatus(related.status)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Recommended Anime */}
+            {anime.recommendations && anime.recommendations.edges && anime.recommendations.edges.length > 0 && (
+              <div className="pt-8">
+                <h3 className="text-xl font-bold text-text-primary mb-4">You May Also Like</h3>
+                <div className="flex overflow-x-auto pb-4 -mx-4 px-4 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 snap-x snap-mandatory hide-scrollbar">
+                  {anime.recommendations.edges
+                    .filter((edge) => edge.node.mediaRecommendation?.type === 'ANIME')
+                    .slice(0, 12).map((edge) => {
+                    const rec = edge.node.mediaRecommendation;
+                    if (!rec) return null;
+                    const rTitle = getTitle(rec.title);
+                    const rCover = getCoverImage(rec.coverImage);
+                    const rScore = formatScore(rec.averageScore);
+                    const rFormat = formatMediaFormat(rec.format);
+                    
+                    return (
+                      <div key={`rec-${rec.id}`} className="min-w-[140px] w-[140px] md:w-auto snap-start flex-shrink-0">
+                        <AnimeCard
+                          id={rec.id}
+                          title={rTitle}
+                          coverImage={rCover}
+                          score={rScore}
+                          formatStr={rFormat}
+                          primaryGenre={rec.genres?.[0]}
+                          episodesOrStatus={rec.episodes ? `${rec.episodes} eps` : formatStatus(rec.status)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
         </div>

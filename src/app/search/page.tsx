@@ -19,6 +19,7 @@ import {
   type AniListMedia,
   type MediaFormat,
 } from "@/lib/anilist/client";
+import { AnimeCard } from "@/components/anime/AnimeCard";
 
 const FORMAT_FILTERS: { label: string; value: MediaFormat | "ALL" }[] = [
   { label: "All", value: "ALL" },
@@ -29,6 +30,27 @@ const FORMAT_FILTERS: { label: string; value: MediaFormat | "ALL" }[] = [
   { label: "Specials", value: "SPECIAL" },
 ];
 
+const GENRES_LIST = [
+  "Action",
+  "Adventure",
+  "Comedy",
+  "Drama",
+  "Ecchi",
+  "Fantasy",
+  "Horror",
+  "Mahou Shoujo",
+  "Mecha",
+  "Music",
+  "Mystery",
+  "Psychological",
+  "Romance",
+  "Sci-Fi",
+  "Slice of Life",
+  "Sports",
+  "Supernatural",
+  "Thriller"
+];
+
 export default function SearchPage() {
   const searchParams = useSearchParams();
 
@@ -36,9 +58,12 @@ export default function SearchPage() {
   const initialQuery = searchParams.get("q") || "";
   const initialFormat = (searchParams.get("format") as MediaFormat) || "ALL";
   const initialPage = Number(searchParams.get("page")) || 1;
+  const initialGenres = searchParams.getAll("genres");
 
   const [query, setQuery] = useState(initialQuery);
   const [selectedFormat, setSelectedFormat] = useState<MediaFormat | "ALL">(initialFormat);
+  const [selectedGenres, setSelectedGenres] = useState<string[]>(initialGenres.length ? initialGenres[0].split(',') : []);
+  const [showGenres, setShowGenres] = useState(selectedGenres.length > 0);
   const [page, setPage] = useState(initialPage);
   const [hasNextPage, setHasNextPage] = useState(false);
 
@@ -60,6 +85,17 @@ export default function SearchPage() {
     setPage(1);
   };
 
+  const handleGenreToggle = (genre: string) => {
+    setSelectedGenres((prev) => {
+      if (prev.includes(genre)) {
+        return prev.filter((g) => g !== genre);
+      } else {
+        return [...prev, genre];
+      }
+    });
+    setPage(1);
+  };
+
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
@@ -68,6 +104,7 @@ export default function SearchPage() {
       const params = new URLSearchParams();
       if (debouncedQuery) params.set("q", debouncedQuery);
       if (selectedFormat && selectedFormat !== "ALL") params.set("format", selectedFormat);
+      if (selectedGenres.length > 0) params.set("genres", selectedGenres.join(','));
       if (page > 1) params.set("page", String(page));
 
       const newUrl = params.toString() ? `/search?${params.toString()}` : "/search";
@@ -76,6 +113,7 @@ export default function SearchPage() {
       const data = await searchAnime({
         search: debouncedQuery,
         format: selectedFormat === "ALL" ? null : selectedFormat,
+        genres: selectedGenres,
         page: page,
         perPage: 24, // Get more results
       });
@@ -90,7 +128,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedQuery, selectedFormat, page]);
+  }, [debouncedQuery, selectedFormat, selectedGenres, page]);
 
   // Run search when debounced inputs change
   useEffect(() => {
@@ -160,6 +198,57 @@ export default function SearchPage() {
             </button>
           ))}
         </div>
+
+        {/* Genre filter chips toggle */}
+        <div className="pt-2 border-t border-border flex items-center justify-between">
+          <button
+            onClick={() => setShowGenres(!showGenres)}
+            className="flex items-center gap-2 text-sm font-medium text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={`transition-transform ${showGenres ? "rotate-180" : ""}`}>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            {showGenres ? "Hide Genre Filters" : "Filter by Genre"}
+          </button>
+          {!showGenres && selectedGenres.length > 0 && (
+            <div className="flex gap-2">
+              <span className="text-xs px-2 py-1 bg-accent/20 text-accent rounded-[var(--radius-full)] font-medium">
+                {selectedGenres.length} selected
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Genre filter chips */}
+        {showGenres && (
+          <div className="flex flex-wrap gap-2 pt-2 animate-fade-in">
+            {GENRES_LIST.map((genre) => (
+              <button
+                key={genre}
+                onClick={() => handleGenreToggle(genre)}
+                className={`
+                  px-3 py-1.5 text-xs font-medium rounded-[var(--radius-full)]
+                  transition-all cursor-pointer
+                  ${
+                    selectedGenres.includes(genre)
+                      ? "bg-accent/20 text-accent border border-accent/50"
+                      : "bg-transparent text-text-secondary border border-border hover:border-border-hover hover:text-text-primary"
+                  }
+                `}
+              >
+                {genre}
+              </button>
+            ))}
+            {selectedGenres.length > 0 && (
+              <button
+                onClick={() => setSelectedGenres([])}
+                className="px-3 py-1.5 text-xs font-medium rounded-[var(--radius-full)] bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 transition-all cursor-pointer"
+              >
+                Clear Genres
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Meta Info */}
@@ -206,75 +295,16 @@ export default function SearchPage() {
               const formatStr = formatMediaFormat(anime.format);
 
               return (
-                <Link key={anime.id} href={`/anime/${anime.id}`} className="block h-full">
-                  <Card
-                    hover
-                    glow
-                    padding="none"
-                    className="overflow-hidden group flex flex-col h-full"
-                  >
-                    {/* Cover Image */}
-                    <div className="relative aspect-[2/3] bg-bg-secondary w-full">
-                      {coverImage ? (
-                        <Image
-                          src={coverImage}
-                          alt={title}
-                          fill
-                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-                          quality={75}
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-text-muted">
-                          No Image
-                        </div>
-                      )}
-
-                      {/* Badges Overlay */}
-                      <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-                        {score && (
-                          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-black/70 text-white rounded-[var(--radius-sm)] backdrop-blur-md flex items-center gap-1">
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                            </svg>
-                            {score}
-                          </span>
-                        )}
-                        <span className="px-1.5 py-0.5 text-[10px] font-medium bg-black/70 text-white rounded-[var(--radius-sm)] backdrop-blur-md ml-auto">
-                          {formatStr}
-                        </span>
-                      </div>
-
-                      {/* Gradient overlay on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                        <Button variant="primary" size="sm" className="w-full opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
-                          Add to List
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Info */}
-                    <div className="p-3 flex-1 flex flex-col justify-between">
-                      <div>
-                        <h3
-                          className="text-sm font-semibold text-text-primary line-clamp-2 leading-tight mb-1"
-                          title={title}
-                        >
-                          {title}
-                        </h3>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-text-muted mt-2">
-                        <span className="truncate max-w-[60%]">
-                          {anime.genres[0] || "Unknown"}
-                        </span>
-                        <span>
-                          {anime.episodes ? `${anime.episodes} eps` : anime.status === "RELEASING" ? "Airing" : "TBA"}
-                        </span>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
+                <AnimeCard
+                  key={anime.id}
+                  id={anime.id}
+                  title={title}
+                  coverImage={coverImage}
+                  score={score}
+                  formatStr={formatStr}
+                  primaryGenre={anime.genres[0]}
+                  episodesOrStatus={anime.episodes ? `${anime.episodes} eps` : anime.status === "RELEASING" ? "Airing" : "TBA"}
+                />
               );
             })}
           </div>

@@ -7,6 +7,7 @@ const ANILIST_API_URL = "https://graphql.anilist.co";
 /** AniList media type from API */
 export interface AniListMedia {
   id: number;
+  type?: "ANIME" | "MANGA" | string | null;
   title: {
     romaji: string;
     english: string | null;
@@ -35,6 +36,19 @@ export interface AniListMedia {
   seasonYear: number | null;
   description: string | null;
   siteUrl: string | null;
+  relations?: {
+    edges: {
+      relationType: string;
+      node: AniListMedia;
+    }[];
+  };
+  recommendations?: {
+    edges: {
+      node: {
+        mediaRecommendation: AniListMedia;
+      };
+    }[];
+  };
 }
 
 export interface AniListSearchResult {
@@ -51,7 +65,7 @@ export interface AniListSearchResult {
 
 /** Search query with filters */
 const SEARCH_QUERY = `
-query SearchAnime($search: String, $format: MediaFormat, $page: Int, $perPage: Int, $sort: [MediaSort]) {
+query SearchAnime($search: String, $format: MediaFormat, $genres: [String], $page: Int, $perPage: Int, $sort: [MediaSort]) {
   Page(page: $page, perPage: $perPage) {
     pageInfo {
       total
@@ -59,7 +73,7 @@ query SearchAnime($search: String, $format: MediaFormat, $page: Int, $perPage: I
       lastPage
       hasNextPage
     }
-    media(search: $search, type: ANIME, format: $format, sort: $sort, isAdult: false) {
+    media(search: $search, type: ANIME, format: $format, genre_in: $genres, sort: $sort, isAdult: false) {
       id
       title {
         romaji
@@ -144,6 +158,7 @@ export type MediaFormat = "TV" | "MOVIE" | "OVA" | "ONA" | "SPECIAL" | "MUSIC" |
 interface SearchOptions {
   search?: string;
   format?: MediaFormat;
+  genres?: string[];
   page?: number;
   perPage?: number;
   sort?: string[];
@@ -159,6 +174,7 @@ export async function searchAnime(
   const {
     search,
     format = null,
+    genres = [],
     page = 1,
     perPage = 20,
     sort = ["TRENDING_DESC", "POPULARITY_DESC"],
@@ -181,6 +197,10 @@ export async function searchAnime(
 
   if (format) {
     variables.format = format;
+  }
+
+  if (genres && genres.length > 0) {
+    variables.genres = genres;
   }
 
   const response = await fetch(ANILIST_API_URL, {
@@ -238,6 +258,57 @@ query GetAnime($id: Int!) {
     seasonYear
     description
     siteUrl
+    relations {
+      edges {
+        relationType
+        node {
+          id
+          type
+          title {
+            romaji
+            english
+            native
+          }
+          coverImage {
+            extraLarge
+            large
+            medium
+            color
+          }
+          format
+          episodes
+          status
+          averageScore
+          meanScore
+        }
+      }
+    }
+    recommendations(sort: RATING_DESC, page: 1, perPage: 12) {
+      edges {
+        node {
+          mediaRecommendation {
+            id
+            type
+            title {
+              romaji
+              english
+              native
+            }
+            coverImage {
+              extraLarge
+              large
+              medium
+              color
+            }
+            format
+            episodes
+            status
+            averageScore
+            meanScore
+          }
+        }
+      }
+    }
   }
 }
 `;

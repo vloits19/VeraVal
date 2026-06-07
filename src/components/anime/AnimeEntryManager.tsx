@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { updateAnimeEntry, AnimeEntryData } from "@/lib/anime/actions";
+import { updateAnimeEntry, removeAnimeEntry, AnimeEntryData } from "@/lib/anime/actions";
 import type { AnimeListEntry } from "@/types";
 
 interface AnimeEntryManagerProps {
@@ -18,6 +18,7 @@ const STATUS_OPTIONS = [
   { value: "plan_to_watch", label: "Plan to Watch" },
   { value: "dropped", label: "Dropped" },
   { value: "not_interested", label: "Not Interested" },
+  { value: "none", label: "None (Remove from list)" },
 ];
 
 export function AnimeEntryManager({ animeId, totalEpisodes, initialEntry }: AnimeEntryManagerProps) {
@@ -35,6 +36,13 @@ export function AnimeEntryManager({ animeId, totalEpisodes, initialEntry }: Anim
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      if (status === "none") {
+        await removeAnimeEntry(animeId);
+        // Reload to completely remove the UI state
+        window.location.reload();
+        return;
+      }
+
       let finalFinishedAt = finishedAt;
       // Auto-fill finished_at if completed
       if (status === "completed" && !finishedAt) {

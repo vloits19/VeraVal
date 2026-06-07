@@ -221,3 +221,23 @@ export async function updateAnimeEntry(data: AnimeEntryData) {
   revalidatePath("/", "layout");
 }
 
+export async function removeAnimeEntry(animeId: number) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("anime_lists")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("anime_id", animeId);
+
+  if (error) {
+    console.error("Error removing anime entry:", error);
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/", "layout");
+}
+

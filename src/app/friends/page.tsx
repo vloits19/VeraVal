@@ -161,12 +161,6 @@ export default async function FriendsPage() {
                         Last Active: {timeSince(f.user.last_active)}
                       </p>
 
-                      {currentUserRole === 'admin' && (
-                        <div className="mt-3 w-full flex justify-center">
-                          <RoleManagerDropdown targetUserId={f.user.id} initialRole={f.user.role || 'user'} />
-                        </div>
-                      )}
-
                       {/* Favorite Anime Tag */}
                       {favAnime && (
                         <div className="mt-4 text-xs flex flex-col items-center gap-1 w-full text-center">
@@ -174,6 +168,12 @@ export default async function FriendsPage() {
                           <span className="bg-bg-input text-text-secondary px-2 py-1 rounded truncate w-full border border-border">
                             {favAnime.title.english || favAnime.title.romaji}
                           </span>
+                        </div>
+                      )}
+
+                      {currentUserRole === 'admin' && (
+                        <div className="mt-3 w-full flex justify-center">
+                          <RoleManagerDropdown targetUserId={f.user.id} initialRole={f.user.role || 'user'} />
                         </div>
                       )}
                     </div>

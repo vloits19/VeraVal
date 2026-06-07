@@ -29,7 +29,11 @@ export function RoleManagerDropdown({ targetUserId, initialRole = "user" }: Role
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-2"
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       <label className="text-[10px] text-text-muted uppercase tracking-wider font-semibold">Role:</label>
       <select
         value={role}

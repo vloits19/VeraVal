@@ -124,15 +124,16 @@ export default async function FriendsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {friends.map(f => {
+              const isPrivileged = f.user.role === 'admin' || f.user.role === 'whitelist';
               const favAnimeId = friendAnimeMap.get(f.user.id);
               const favAnime = favAnimeId ? animeDataMap.get(favAnimeId) : null;
-              const bannerImage = favAnime?.bannerImage || favAnime?.coverImage?.large;
+              const bannerImage = isPrivileged ? (favAnime?.bannerImage || favAnime?.coverImage?.large) : null;
 
               return (
                 <Link key={f.friendId} href={`/profile/${f.user.username}`} className="block h-full group">
                   <Card hover glow padding="none" className="overflow-hidden h-full flex flex-col relative border-transparent hover:border-accent/50">
                     
-                    {/* Favorite Anime Banner Preview */}
+                    {/* Favorite Anime Banner Preview — only for admin/whitelist */}
                     <div className="h-24 w-full bg-bg-secondary relative overflow-hidden">
                       {bannerImage ? (
                         <Image src={bannerImage} alt="Favorite Anime" fill sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw" quality={60} className="object-cover opacity-60 group-hover:opacity-80 transition-opacity" loading="lazy" />

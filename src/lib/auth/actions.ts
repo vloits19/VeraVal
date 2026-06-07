@@ -221,10 +221,19 @@ export async function logoutUser(): Promise<{ success: boolean; error: string | 
  */
 export async function signInWithGoogle() {
   const supabase = await createClient();
+  
+  // Dynamically determine the origin to support Vercel preview deployments
+  // and production without strictly relying on NEXT_PUBLIC_SITE_URL.
+  const { headers } = await import("next/headers");
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") || headersList.get("host") || "localhost:3000";
+  const protocol = headersList.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+  const origin = `${protocol}://${host}`;
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || origin}/auth/callback`,
     },
   });
 

@@ -121,11 +121,18 @@ export function Sidebar({ isOpen, onClose, isMinimized = false, onToggleMinimize
         {/* Navigation links */}
         <nav className="flex-1 py-4 px-3 space-y-1">
           {NAV_ROUTES.map((route, index) => {
-            const isActive = pathname === route.href;
+            const isProfileRoute = route.icon === "profile";
+            const actualHref = (isProfileRoute && profile?.username) ? `/profile/${profile.username}` : route.href;
+            
+            // For profile, match exact or sub-routes
+            const isActive = isProfileRoute 
+              ? pathname === actualHref || pathname.startsWith(`${actualHref}/`)
+              : pathname === actualHref;
+              
             return (
               <React.Fragment key={route.href}>
                 <Link
-                  href={route.href}
+                  href={actualHref}
                   id={`nav-link-${route.icon}`}
                   className={`
                     group relative flex items-center gap-3 px-3 py-2.5

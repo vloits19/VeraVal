@@ -3,8 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getAnimeById, getCoverImage, formatScore, formatStatus, formatMediaFormat } from "@/lib/anilist/client";
 import { getAnimeStatus } from "@/lib/anime/actions";
-import { AnimeStatusDropdown } from "@/components/anime/AnimeStatusDropdown";
-import { AnimeProgressTracker } from "@/components/anime/AnimeProgressTracker";
+import { AnimeEntryManager } from "@/components/anime/AnimeEntryManager";
 import { AnimeShowcasePin } from "@/components/anime/AnimeShowcasePin";
 
 export default async function AnimeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -74,22 +73,19 @@ export default async function AnimeDetailsPage({ params }: { params: Promise<{ i
 
             {/* User Actions */}
             <div className="space-y-3">
-              <AnimeStatusDropdown animeId={animeId} initialStatus={userStatus?.status || null} />
+              <AnimeEntryManager 
+                animeId={animeId} 
+                totalEpisodes={anime.episodes} 
+                initialEntry={userStatus} 
+              />
               
               {userStatus && (
-                <>
-                  <AnimeProgressTracker 
-                    animeId={animeId} 
-                    initialProgress={userStatus.progress || 0} 
-                    totalEpisodes={anime.episodes} 
-                  />
-                  <AnimeShowcasePin 
-                    animeId={animeId}
-                    initialFavorite={userStatus.is_favorite || false}
-                    initialPinned={userStatus.is_pinned || false}
-                    hasListEntry={true}
-                  />
-                </>
+                <AnimeShowcasePin 
+                  animeId={animeId}
+                  initialFavorite={userStatus.is_favorite || false}
+                  initialPinned={userStatus.is_pinned || false}
+                  hasListEntry={true}
+                />
               )}
             </div>
 

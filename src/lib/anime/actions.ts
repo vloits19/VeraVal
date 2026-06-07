@@ -133,7 +133,7 @@ export async function toggleFavorite(animeId: number, isFavorite: boolean) {
     throw new Error(error.message);
   }
 
-  revalidatePath(`/anime/${animeId}`);
+  revalidatePath("/", "layout");
 }
 
 export async function togglePinned(animeId: number, isPinned: boolean) {
@@ -153,5 +153,71 @@ export async function togglePinned(animeId: number, isPinned: boolean) {
     throw new Error(error.message);
   }
 
-  revalidatePath(`/anime/${animeId}`);
+  revalidatePath("/", "layout");
 }
+
+export interface AnimeEntryData {
+  animeId: number;
+  status: string;
+  progress?: number;
+  score?: number;
+  started_at?: string | null;
+  finished_at?: string | null;
+  notes?: string | null;
+}
+
+export async function updateAnimeEntry(data: AnimeEntryData) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not authenticated");
+
+  // Get user profile for notification
+  const { data: profile } = await supabase
+    .from("users")
+    .select("username")
+    .eq("id", user.id)
+    .single();
+
+  const payload: any = {
+    user_id: user.id,
+    anime_id: data.animeId,
+    status: data.status,
+  };
+
+  if (data.progress !== undefined) payload.progress = data.progress;
+  if (data.score !== undefined) payload.score = data.score;
+  if (data.started_at !== undefined) payload.started_at = data.started_at;
+  if (data.finished_at !== undefined) payload.finished_at = data.finished_at;
+  if (data.notes !== undefined) payload.notes = data.notes;
+
+  const { error } = await supabase
+    .from("anime_lists")
+    .upsert(payload, { onConflict: "user_id,anime_id" });
+
+  if (error) {
+    console.error("Error updating anime entry:", error);
+    throw new Error(error.message);
+  }
+
+  // Notify friends about activity (non-blocking)
+  const username = profile?.username || "Someone";
+  const statusLabel = STATUS_LABELS[data.status] || data.status;
+  const friendIds = await getFriendIds(user.id);
+  
+  Promise.all(
+    friendIds.map(friendId =>
+      createNotification(
+        friendId,
+        "friend_activity",
+        "Friend Activity",
+        `${username} updated an anime entry (${statusLabel}).`,
+        String(data.animeId),
+        `/anime/${data.animeId}`
+      )
+    )
+  ).catch(console.error);
+
+  revalidatePath("/", "layout");
+}
+

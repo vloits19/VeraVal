@@ -32,7 +32,7 @@ export async function updateProfile(data: Partial<User>) {
   }
   
   if (username) {
-    revalidatePath(`/user/${username}`);
+    revalidatePath(`/profile/${username}`);
   }
   revalidatePath("/settings/profile");
 }
@@ -61,21 +61,36 @@ export async function getUserStats(userId: string) {
     { count: friendCount },
     { count: watchingCount },
     { count: completedCount },
-    { count: ptwCount }
+    { count: ptwCount },
+    { count: droppedCount },
+    { count: notInterestedCount },
+    { data: scoredAnime }
   ] = await Promise.all([
     supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId),
     supabase.from("friends").select("*", { count: 'exact', head: true }).or(`user1_id.eq.${userId},user2_id.eq.${userId}`),
     supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "watching"),
     supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "completed"),
-    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "plan_to_watch")
+    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "plan_to_watch"),
+    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "dropped"),
+    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "not_interested"),
+    supabase.from("anime_lists").select("score").eq("user_id", userId).gt("score", 0)
   ]);
     
+  let meanScore = 0;
+  if (scoredAnime && scoredAnime.length > 0) {
+    const total = scoredAnime.reduce((sum, item) => sum + (item.score || 0), 0);
+    meanScore = Number((total / scoredAnime.length).toFixed(2));
+  }
+
   return {
     animeCount: animeCount || 0,
     friendCount: friendCount || 0,
     watchingCount: watchingCount || 0,
     completedCount: completedCount || 0,
-    planToWatchCount: ptwCount || 0
+    planToWatchCount: ptwCount || 0,
+    droppedCount: droppedCount || 0,
+    notInterestedCount: notInterestedCount || 0,
+    meanScore
   };
 }
 
@@ -129,4 +144,36 @@ export async function getUserCategoryList(userId: string, category: string) {
     return [];
   }
   return data;
+}
+
+export async function updateUserRole(targetUserId: string, newRole: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) throw new Error("Not authenticated");
+
+  // Verify the requesting user is an admin
+  const { data: currentUserProfile } = await supabase
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (currentUserProfile?.role !== "admin") {
+    throw new Error("Unauthorized: Only admins can manage roles.");
+  }
+
+  // Update target user's role
+  const { error } = await supabase
+    .from("users")
+    .update({ role: newRole })
+    .eq("id", targetUserId);
+
+  if (error) {
+    console.error("Error updating user role:", error);
+    throw new Error("Failed to update user role");
+  }
+
+  // Revalidate to update UI
+  revalidatePath("/", "layout");
 }

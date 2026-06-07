@@ -81,7 +81,7 @@ export async function sendFriendRequest(targetUserId: string) {
     "New Friend Request",
     `${senderName} sent you a friend request.`,
     user.id,
-    `/user/${senderName}`
+    `/profile/${senderName}`
   );
 
   revalidatePath("/friends");
@@ -125,7 +125,7 @@ export async function acceptFriendRequest(requestId: string, senderId: string) {
     "Friend Request Accepted",
     `${accepterName} accepted your friend request!`,
     user.id,
-    `/user/${accepterName}`
+    `/profile/${accepterName}`
   );
 
   revalidatePath("/friends");
@@ -197,7 +197,7 @@ export async function getFriendsList() {
     .from("friends")
     .select(`
       id,
-      users!friends_user2_id_fkey(id, username, avatar, accent_color, last_active)
+      users!friends_user2_id_fkey(id, username, avatar, accent_color, last_active, role)
     `)
     .eq("user1_id", user.id);
 
@@ -205,7 +205,7 @@ export async function getFriendsList() {
     .from("friends")
     .select(`
       id,
-      users!friends_user1_id_fkey(id, username, avatar, accent_color, last_active)
+      users!friends_user1_id_fkey(id, username, avatar, accent_color, last_active, role)
     `)
     .eq("user2_id", user.id);
 

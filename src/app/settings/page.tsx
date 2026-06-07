@@ -5,9 +5,6 @@ import { ThemeToggleSection } from "@/components/profile/ThemeToggleSection";
 import { DangerZoneSection } from "@/components/profile/DangerZoneSection";
 import { NotificationSettings } from "@/components/profile/NotificationSettings";
 import { SettingsForm } from "@/components/profile/SettingsForm";
-import { ShowcaseManager } from "@/components/profile/ShowcaseManager";
-import { getShowcase } from "@/lib/profile/showcaseActions";
-import { getAnimeByIds } from "@/lib/anilist/client";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
@@ -25,33 +22,7 @@ export default async function SettingsPage() {
     .eq("id", user.id)
     .single();
 
-  const [showcaseData, { data: userAnimeList }] = await Promise.all([
-    getShowcase(user.id),
-    supabase.from("anime_lists").select("anime_id, status").eq("user_id", user.id),
-  ]);
-
-  const allIds = Array.from(new Set([
-    ...(showcaseData.map(s => s.anime_id)),
-    ...(userAnimeList?.map(a => a.anime_id) || [])
-  ]));
-
-  let anilistData: any[] = [];
-  if (allIds.length > 0) {
-    // Note: AniList pagination might be needed if allIds > 50
-    // But for beta, slicing to 50 is fine to prevent errors
-    anilistData = await getAnimeByIds(allIds.slice(0, 50));
-  }
-
-  const animeDetails: Record<number, any> = {};
-  for (const anime of anilistData) {
-    animeDetails[anime.id] = {
-      id: anime.id,
-      title: anime.title.english || anime.title.romaji || anime.title.native,
-      coverImage: anime.coverImage.extraLarge || anime.coverImage.large || anime.coverImage.medium,
-      score: anime.averageScore ? Number((anime.averageScore / 10).toFixed(1)) : null,
-    };
-  }
-
+  // Removed showcase data fetching
   if (!profile) {
     // If the profile wasn't created properly, we should handle this gracefully
     // But for now, we just pass what we can or show an error
@@ -123,23 +94,7 @@ export default async function SettingsPage() {
         <ThemeToggleSection />
       </section>
 
-      {/* ── Profile Showcase ── */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="9" y1="21" x2="9" y2="9" />
-          </svg>
-          Profile Showcase
-        </h2>
 
-        <ShowcaseManager 
-          initialShowcase={showcaseData}
-          userAnimeList={userAnimeList || []}
-          animeDetails={animeDetails}
-        />
-      </section>
 
       {/* ── Notifications Section ── */}
       <section className="space-y-4">

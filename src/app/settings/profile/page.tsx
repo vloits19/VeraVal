@@ -98,7 +98,7 @@ export default function ProfileSettingsPage() {
       await updateProfile(formData);
       await refreshProfile();
       showToast("Profile updated successfully", "success");
-      router.push(`/user/${profile.username}`);
+      router.push(`/profile/${profile.username}`);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to update profile";
       showToast(message, "error");
@@ -224,7 +224,7 @@ export default function ProfileSettingsPage() {
           </Card>
           
           <div className="flex justify-end gap-3">
-            <Button variant="ghost" onClick={() => router.push(`/user/${profile.username}`)}>
+            <Button variant="ghost" onClick={() => router.push(`/profile/${profile.username}`)}>
               Cancel
             </Button>
             <Button variant="primary" onClick={handleSave} disabled={loading}>

@@ -7,6 +7,7 @@ import { getAnimeByIds } from "@/lib/anilist/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { FriendActionButton } from "@/components/social/FriendActionButton";
+import { RoleManagerDropdown } from "@/components/friends/RoleManagerDropdown";
 
 export default async function FriendsPage() {
   const friends = await getFriendsList();
@@ -14,6 +15,15 @@ export default async function FriendsPage() {
 
   // Fetch favorite anime for each friend
   const supabase = await createClient();
+  
+  // Get current user role
+  const { data: { user } } = await supabase.auth.getUser();
+  let currentUserRole = "user";
+  if (user) {
+    const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
+    if (profile?.role) currentUserRole = profile.role;
+  }
+
   const friendAnimeMap = new Map();
   const animeIdsToFetch = new Set<number>();
 
@@ -82,7 +92,7 @@ export default async function FriendsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {requests.map(req => (
               <Card key={req.id} padding="sm" className="flex items-center justify-between">
-                <Link href={`/user/${req.sender.username}`} className="flex items-center gap-3 group">
+                <Link href={`/profile/${req.sender.username}`} className="flex items-center gap-3 group">
                   <div className="relative w-12 h-12 rounded-full overflow-hidden bg-bg-secondary border-2 border-transparent group-hover:border-accent transition-colors" style={{ borderColor: req.sender.accent_color }}>
                     {req.sender.avatar ? (
                       <Image src={req.sender.avatar} alt={req.sender.username} fill sizes="48px" quality={80} className="object-cover" loading="lazy" />
@@ -119,7 +129,7 @@ export default async function FriendsPage() {
               const bannerImage = favAnime?.bannerImage || favAnime?.coverImage?.large;
 
               return (
-                <Link key={f.friendId} href={`/user/${f.user.username}`} className="block h-full group">
+                <Link key={f.friendId} href={`/profile/${f.user.username}`} className="block h-full group">
                   <Card hover glow padding="none" className="overflow-hidden h-full flex flex-col relative border-transparent hover:border-accent/50">
                     
                     {/* Favorite Anime Banner Preview */}
@@ -150,6 +160,12 @@ export default async function FriendsPage() {
                       <p className="text-xs text-text-muted mt-1 font-medium">
                         Last Active: {timeSince(f.user.last_active)}
                       </p>
+
+                      {currentUserRole === 'admin' && (
+                        <div className="mt-3 w-full flex justify-center">
+                          <RoleManagerDropdown targetUserId={f.user.id} initialRole={f.user.role || 'user'} />
+                        </div>
+                      )}
 
                       {/* Favorite Anime Tag */}
                       {favAnime && (

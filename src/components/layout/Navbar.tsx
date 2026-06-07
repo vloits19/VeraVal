@@ -210,7 +210,7 @@ export function Navbar({ onMenuToggle, isSidebarOpen }: NavbarProps) {
                         </p>
                       </div>
                       <Link
-                        href="/profile"
+                        href={`/profile/${profile.username}`}
                         onClick={() => setDropdownOpen(false)}
                         className="flex items-center px-4 py-2 text-sm text-text-secondary hover:text-text-primary hover:bg-bg-card transition-colors"
                       >

@@ -121,7 +121,7 @@ export function Sidebar({ isOpen, onClose, isMinimized = false, onToggleMinimize
         {/* Navigation links */}
         <nav className="flex-1 py-4 px-3 space-y-1">
           {NAV_ROUTES.map((route, index) => {
-            const isProfileRoute = route.icon === "profile";
+            const isProfileRoute = route.icon === "user";
             const actualHref = (isProfileRoute && profile?.username) ? `/profile/${profile.username}` : route.href;
             
             // For profile, match exact or sub-routes

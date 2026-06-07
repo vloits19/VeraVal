@@ -132,7 +132,7 @@ export function AnimeEntryManager({ animeId, totalEpisodes, initialEntry }: Anim
           <label className="text-xs font-medium text-text-primary">Status</label>
           <select 
             value={status} 
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => setStatus(e.target.value as any)}
             className="w-full bg-bg-input border border-border rounded-[var(--radius-md)] px-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
           >
             {STATUS_OPTIONS.map(opt => (

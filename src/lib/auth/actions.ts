@@ -1,5 +1,7 @@
 "use server";
 
+import { redirect } from "next/navigation";
+
 import { createClient } from "@/lib/supabase/server";
 import {
   validateLoginForm,
@@ -59,6 +61,7 @@ export async function registerUser(formData: {
   });
 
   if (profileError) {
+    console.error("Profile insertion error:", profileError);
     // If profile creation fails, check if it's a duplicate username
     if (profileError.message.includes("duplicate") || profileError.code === "23505") {
       return {
@@ -121,4 +124,25 @@ export async function logoutUser(): Promise<{ success: boolean; error: string | 
   }
 
   return { success: true, error: null };
+}
+
+/**
+ * Sign in with Google OAuth.
+ */
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+    },
+  });
+
+  if (data.url) {
+    redirect(data.url); // this throws an error caught by Next.js, must be outside try/catch
+  }
+  
+  if (error) {
+    throw new Error(error.message);
+  }
 }

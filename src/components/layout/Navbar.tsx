@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
 interface NavbarProps {
   onMenuToggle?: () => void;
@@ -183,6 +184,7 @@ export function Navbar({ onMenuToggle, isSidebarOpen }: NavbarProps) {
           {/* Auth buttons / Avatar */}
           {!isAuthPage && (
             <div className="flex items-center gap-2 ml-1">
+              {profile && <NotificationBell />}
               {profile ? (
                 <div className="relative" ref={dropdownRef}>
                   <button

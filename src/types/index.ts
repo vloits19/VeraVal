@@ -11,6 +11,11 @@ export interface User {
   banner: string;
   bio: string;
   accent_color: string;
+  preferences?: {
+    notify_episodes: boolean;
+    notify_recommendations: boolean;
+    notify_social: boolean;
+  };
   created_at: string;
 }
 

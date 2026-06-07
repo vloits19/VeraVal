@@ -1,8 +1,11 @@
 import React from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { searchAnime, getTitle, getCoverImage, formatScore } from "@/lib/anilist/client";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
   title: "VeraVal — Track Your Anime Journey",
@@ -60,34 +63,20 @@ const FEATURES = [
   },
 ];
 
-const TRENDING_PLACEHOLDERS = [
-  {
-    title: "Frieren: Beyond Journey's End",
-    genre: "Fantasy • Adventure",
-    score: "9.1",
-    color: "from-emerald-500/20 to-cyan-500/20",
-  },
-  {
-    title: "Solo Leveling",
-    genre: "Action • Fantasy",
-    score: "8.7",
-    color: "from-purple-500/20 to-blue-500/20",
-  },
-  {
-    title: "Dandadan",
-    genre: "Action • Comedy",
-    score: "8.5",
-    color: "from-orange-500/20 to-red-500/20",
-  },
-  {
-    title: "Oshi no Ko Season 2",
-    genre: "Drama • Supernatural",
-    score: "8.8",
-    color: "from-pink-500/20 to-violet-500/20",
-  },
-];
+export default async function HomePage() {
+  // Fetch actual trending anime from AniList (top 4)
+  let trendingAnime: any[] = [];
+  try {
+    const trendingData = await searchAnime({ perPage: 4 });
+    trendingAnime = trendingData?.Page?.media || [];
+  } catch (error) {
+    console.error("Failed to fetch trending anime:", error);
+    // Fallback to empty array on network failure
+  }
 
-export default function HomePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <div className="space-y-16 pb-8 animate-fade-in">
       {/* ── Hero Section ── */}
@@ -207,72 +196,94 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {TRENDING_PLACEHOLDERS.map((anime) => (
-            <Card key={anime.title} hover padding="none" className="overflow-hidden">
-              {/* Placeholder cover */}
-              <div
-                className={`h-48 bg-gradient-to-br ${anime.color} flex items-center justify-center`}
-              >
-                <svg
-                  width="48"
-                  height="48"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                  className="text-text-muted/30"
-                >
-                  <rect x="2" y="2" width="20" height="20" rx="3" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
-              </div>
-              <div className="p-4 space-y-2">
-                <h3 className="text-sm font-semibold text-text-primary line-clamp-1">
-                  {anime.title}
-                </h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-text-muted">{anime.genre}</span>
-                  <span className="text-xs font-medium text-accent flex items-center gap-1">
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                    </svg>
-                    {anime.score}
-                  </span>
-                </div>
-              </div>
-            </Card>
-          ))}
+          {trendingAnime.length > 0 ? (
+            trendingAnime.map((anime) => {
+              const title = getTitle(anime.title);
+              const coverImage = getCoverImage(anime.coverImage);
+              const score = formatScore(anime.averageScore);
+              const genre = anime.genres?.[0] || anime.format || "Anime";
+
+              return (
+                <Link href={`/anime/${anime.id}`} key={anime.id}>
+                  <Card 
+                    padding="none" 
+                    className="group overflow-hidden relative cursor-pointer border border-border/50 bg-bg-card hover:border-accent/50 transition-all duration-[400ms] h-full flex flex-col"
+                  >
+                    {/* Image container with aspect ratio and smooth scale */}
+                    <div className="relative aspect-[4/5] overflow-hidden bg-bg-secondary w-full">
+                      {coverImage ? (
+                        <Image
+                          src={coverImage}
+                          alt={title}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                          className="object-cover transition-transform duration-[600ms] group-hover:scale-110 ease-out"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-text-muted">
+                          No Image
+                        </div>
+                      )}
+                      
+                      {/* Dark gradient overlay that shifts on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-bg-primary via-bg-primary/20 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
+                      
+                      {/* Floating Info on Image */}
+                      <div className="absolute bottom-0 left-0 right-0 p-4 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-[400ms] ease-out">
+                        <h3 className="text-base font-bold text-text-primary line-clamp-2 drop-shadow-md">
+                          {title}
+                        </h3>
+                        <div className="flex items-center justify-between mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-[400ms] delay-75">
+                          <span className="text-xs font-medium px-2 py-1 bg-accent/20 text-accent rounded-full backdrop-blur-sm">
+                            {genre}
+                          </span>
+                          {score && (
+                            <span className="text-xs font-bold text-yellow-400 flex items-center gap-1 bg-black/40 px-2 py-1 rounded-full backdrop-blur-sm">
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                              </svg>
+                              {score}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })
+          ) : (
+            <div className="col-span-1 sm:col-span-2 lg:col-span-4 py-12 text-center text-text-muted bg-bg-card rounded-[var(--radius-lg)] border border-border border-dashed">
+              Failed to load trending anime. Please check your internet connection or try again later.
+            </div>
+          )}
         </div>
       </section>
 
       {/* ── CTA Section ── */}
-      <section className="text-center py-12">
-        <Card
-          padding="lg"
-          glow
-          className="bg-gradient-to-br from-bg-card to-accent/5 max-w-2xl mx-auto"
-        >
-          <div className="space-y-4">
-            <h2 className="text-2xl md:text-3xl font-bold">
-              Ready to start tracking?
-            </h2>
-            <p className="text-text-secondary">
-              Create your free account and begin your organized anime journey today.
-            </p>
-            <Link href="/register">
-              <Button size="lg" className="mt-2">
-                Create Free Account
-              </Button>
-            </Link>
-          </div>
-        </Card>
-      </section>
+      {!user && (
+        <section className="text-center py-12">
+          <Card
+            padding="lg"
+            glow
+            className="bg-gradient-to-br from-bg-card to-accent/5 max-w-2xl mx-auto"
+          >
+            <div className="space-y-4">
+              <h2 className="text-2xl md:text-3xl font-bold">
+                Ready to start tracking?
+              </h2>
+              <p className="text-text-secondary">
+                Create your free account and begin your organized anime journey today.
+              </p>
+              <Link href="/register">
+                <Button size="lg" className="mt-2">
+                  Create Free Account
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        </section>
+      )}
     </div>
   );
 }

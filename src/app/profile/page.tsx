@@ -1,8 +1,13 @@
 import React from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { AnimeShowcase } from "@/components/profile/AnimeShowcase";
+import { createClient } from "@/lib/supabase/server";
+import { getUserStats } from "@/lib/profile/actions";
 
 export const metadata: Metadata = {
   title: "Profile",
@@ -17,11 +22,31 @@ const STATS = [
   { label: "Plan to Watch", value: "—", color: "text-text-muted" },
 ];
 
-const PLACEHOLDER_LIST = [
-  { title: "No anime yet", status: "Start adding anime to your list!" },
-];
+export default async function ProfilePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-export default function ProfilePage() {
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Fetch full profile from users table
+  const { data: profile } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  const stats = await getUserStats(user.id);
+  
+  const STATS = [
+    { label: "Anime", value: stats.animeCount, color: "text-accent" },
+    { label: "Friends", value: stats.friendCount, color: "text-text-primary" },
+    { label: "Watching", value: stats.watchingCount, color: "text-info" },
+    { label: "Completed", value: stats.completedCount, color: "text-success" },
+    { label: "Plan to Watch", value: stats.planToWatchCount, color: "text-text-muted" },
+  ];
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Profile header */}
@@ -30,31 +55,35 @@ export default function ProfilePage() {
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-br from-accent/20 via-purple-500/10 to-transparent" />
 
         <div className="relative flex flex-col sm:flex-row items-start sm:items-end gap-6 pt-16">
-          <Avatar fallback="Guest User" size="xl" className="ring-4 ring-bg-card" />
+          <Avatar src={profile?.avatar} fallback={profile?.username || "User"} size="xl" className="ring-4 ring-bg-card" />
 
           <div className="flex-1 space-y-1">
-            <h1 className="text-2xl font-bold text-text-primary">Guest User</h1>
-            <p className="text-sm text-text-secondary">
-              No bio yet. Sign in to personalize your profile.
+            <h1 className="text-2xl font-bold text-text-primary">{profile?.username || "User"}</h1>
+            <p className="text-sm text-text-secondary max-w-xl">
+              {profile?.bio || "No bio yet. Update your profile in settings."}
             </p>
-            <p className="text-xs text-text-muted">Joined —</p>
+            <p className="text-xs text-text-muted mt-2">
+              Joined {new Date(profile?.created_at || Date.now()).toLocaleDateString()}
+            </p>
           </div>
 
-          <Button variant="secondary" size="sm">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="mr-1"
-            >
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-            Edit Profile
-          </Button>
+          <Link href="/settings">
+            <Button variant="secondary" size="sm">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className="mr-1"
+              >
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              Edit Profile
+            </Button>
+          </Link>
         </div>
       </Card>
 
@@ -68,56 +97,12 @@ export default function ProfilePage() {
         ))}
       </div>
 
-      {/* Anime list placeholder */}
+      {/* Anime list showcase */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-text-primary">Anime List</h2>
-          <div className="flex items-center gap-2">
-            {["All", "Watching", "Completed", "On Hold", "Dropped", "PTW"].map(
-              (tab) => (
-                <button
-                  key={tab}
-                  className={`
-                    px-3 py-1.5 text-xs font-medium rounded-[var(--radius-full)]
-                    transition-colors cursor-pointer
-                    ${
-                      tab === "All"
-                        ? "bg-accent/10 text-accent border border-accent/20"
-                        : "text-text-muted hover:text-text-secondary hover:bg-bg-card"
-                    }
-                  `}
-                >
-                  {tab}
-                </button>
-              )
-            )}
-          </div>
+          <h2 className="text-xl font-bold text-text-primary">Anime Showcase</h2>
         </div>
-
-        <Card padding="lg" className="flex flex-col items-center justify-center py-16">
-          <svg
-            width="64"
-            height="64"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1"
-            className="text-text-muted/30 mb-4"
-          >
-            <rect x="2" y="3" width="20" height="14" rx="2" />
-            <line x1="8" y1="21" x2="16" y2="21" />
-            <line x1="12" y1="17" x2="12" y2="21" />
-          </svg>
-          {PLACEHOLDER_LIST.map((item) => (
-            <div key={item.title} className="text-center space-y-2">
-              <p className="text-text-secondary font-medium">{item.title}</p>
-              <p className="text-sm text-text-muted">{item.status}</p>
-            </div>
-          ))}
-          <Button variant="primary" size="sm" className="mt-6">
-            Browse Anime
-          </Button>
-        </Card>
+        <AnimeShowcase userId={user.id} />
       </section>
     </div>
   );

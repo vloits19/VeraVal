@@ -2,13 +2,12 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getUserProfile, getUserStats, getUserShowcases } from "@/lib/profile/actions";
-import { getAnimeByIds } from "@/lib/anilist/client";
+import { getUserProfile, getUserStats } from "@/lib/profile/actions";
 import { getFriendshipStatus } from "@/lib/friends/actions";
-import type { AnimeListEntry } from "@/types";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FriendActionButton } from "@/components/social/FriendActionButton";
+import { AnimeShowcase } from "@/components/profile/AnimeShowcase";
 
 export default async function UserProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const resolvedParams = await params;
@@ -20,71 +19,10 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
     notFound();
   }
 
-  const [stats, showcases, friendship] = await Promise.all([
+  const [stats, friendship] = await Promise.all([
     getUserStats(profile.id),
-    getUserShowcases(profile.id),
     getFriendshipStatus(profile.id),
   ]);
-
-  // Extract unique anime IDs to fetch metadata from AniList
-  const allAnimeIds = new Set<number>();
-  [showcases.favorites, showcases.planToWatch, showcases.dropped, showcases.notInterested].forEach(list => {
-    list.forEach(entry => allAnimeIds.add(entry.anime_id));
-  });
-
-  const animeDataMap = new Map();
-  if (allAnimeIds.size > 0) {
-    const mediaList = await getAnimeByIds(Array.from(allAnimeIds));
-    mediaList.forEach(media => animeDataMap.set(media.id, media));
-  }
-
-  const renderShowcase = (title: string, list: AnimeListEntry[], linkPath: string) => {
-    if (list.length === 0) return null;
-
-    return (
-      <div className="space-y-4 animate-fade-in">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-text-primary border-l-4 pl-3" style={{ borderColor: 'var(--user-accent)' }}>
-            {title}
-          </h3>
-          <Link href={linkPath}>
-            <Button variant="ghost" size="sm" style={{ color: 'var(--user-accent)' }}>
-              View All &rarr;
-            </Button>
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-          {list.map(entry => {
-            const anime = animeDataMap.get(entry.anime_id);
-            if (!anime) return null;
-            
-            const coverImage = anime.coverImage?.large || anime.coverImage?.medium;
-            const animeTitle = anime.title.english || anime.title.romaji || "Unknown";
-
-            return (
-              <Link key={entry.id} href={`/anime/${anime.id}`} className="block h-full group">
-                <div className="relative aspect-[2/3] w-full rounded-[var(--radius-md)] overflow-hidden bg-bg-secondary mb-2 border border-border group-hover:border-accent transition-colors shadow-sm">
-                  {coverImage && (
-                    <Image src={coverImage} alt={animeTitle} fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw" quality={75} className="object-cover" loading="lazy" />
-                  )}
-                  {/* Progress overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 backdrop-blur-sm p-1.5 text-center">
-                    <span className="text-xs font-bold text-white">
-                      Ep {entry.progress} {anime.episodes ? `/ ${anime.episodes}` : ""}
-                    </span>
-                  </div>
-                </div>
-                <h4 className="text-xs font-medium text-text-primary line-clamp-2 leading-tight group-hover:text-accent transition-colors">
-                  {animeTitle}
-                </h4>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div 
@@ -138,6 +76,14 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
             </div>
             
             <div className="flex items-center gap-3">
+              <Link href={`/user/${profile.username}/anime-list`}>
+                <Button variant="secondary">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2">
+                    <path d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  Anime List
+                </Button>
+              </Link>
               <FriendActionButton 
                 targetUserId={profile.id}
                 initialStatus={friendship.status}
@@ -175,19 +121,7 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
                 <p>{profile.username} hasn&apos;t tracked any anime yet.</p>
               </div>
             ) : (
-              <>
-                {renderShowcase("Favorites", showcases.favorites, `/user/${username}/favorites`)}
-                {renderShowcase("Plan To Watch", showcases.planToWatch, `/user/${username}/plan-to-watch`)}
-                {renderShowcase("Dropped", showcases.dropped, `/user/${username}/dropped`)}
-                {renderShowcase("Not Interested", showcases.notInterested, `/user/${username}/not-interested`)}
-
-                {/* If nothing is pinned */}
-                {Object.values(showcases).every(list => list.length === 0) && (
-                  <div className="bg-bg-card border border-border rounded-[var(--radius-lg)] p-8 text-center text-text-secondary">
-                    <p>No anime pinned to showcases yet.</p>
-                  </div>
-                )}
-              </>
+              <AnimeShowcase userId={profile.id} username={profile.username} />
             )}
             
           </div>

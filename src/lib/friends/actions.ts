@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "@/lib/notifications/actions";
 
 export type FriendshipStatus = "none" | "request_sent" | "request_received" | "friends";
 
@@ -59,11 +60,30 @@ export async function sendFriendRequest(targetUserId: string) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
+  // Get sender's profile for the notification message
+  const { data: senderProfile } = await supabase
+    .from("users")
+    .select("username")
+    .eq("id", user.id)
+    .single();
+
   const { error } = await supabase
     .from("friend_requests")
     .insert({ sender_id: user.id, receiver_id: targetUserId, status: "pending" });
 
   if (error) throw new Error(error.message);
+
+  // Create notification for receiver
+  const senderName = senderProfile?.username || "Someone";
+  await createNotification(
+    targetUserId,
+    "friend_request",
+    "New Friend Request",
+    `${senderName} sent you a friend request.`,
+    user.id,
+    `/user/${senderName}`
+  );
+
   revalidatePath("/friends");
 }
 
@@ -71,6 +91,13 @@ export async function acceptFriendRequest(requestId: string, senderId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
+
+  // Get accepter's profile for the notification
+  const { data: accepterProfile } = await supabase
+    .from("users")
+    .select("username")
+    .eq("id", user.id)
+    .single();
 
   // Update request
   const { error: reqError } = await supabase
@@ -89,6 +116,18 @@ export async function acceptFriendRequest(requestId: string, senderId: string) {
     .insert({ user1_id: user1, user2_id: user2 });
 
   if (friendError) throw new Error(friendError.message);
+
+  // Notify the original sender that their request was accepted
+  const accepterName = accepterProfile?.username || "Someone";
+  await createNotification(
+    senderId,
+    "friend_accepted",
+    "Friend Request Accepted",
+    `${accepterName} accepted your friend request!`,
+    user.id,
+    `/user/${accepterName}`
+  );
+
   revalidatePath("/friends");
 }
 
@@ -101,6 +140,22 @@ export async function rejectFriendRequest(requestId: string) {
     .from("friend_requests")
     .update({ status: "rejected" })
     .eq("id", requestId);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/friends");
+}
+
+export async function cancelFriendRequest(requestId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  const { error } = await supabase
+    .from("friend_requests")
+    .delete()
+    .eq("id", requestId)
+    .eq("sender_id", user.id)
+    .eq("status", "pending");
 
   if (error) throw new Error(error.message);
   revalidatePath("/friends");

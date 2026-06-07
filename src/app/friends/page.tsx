@@ -5,6 +5,7 @@ import { getFriendsList, getPendingRequests } from "@/lib/friends/actions";
 import { createClient } from "@/lib/supabase/server";
 import { getAnimeByIds } from "@/lib/anilist/client";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { FriendActionButton } from "@/components/social/FriendActionButton";
 
 export default async function FriendsPage() {
@@ -57,9 +58,20 @@ export default async function FriendsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-6 animate-fade-in pb-20 mt-8 space-y-12">
-      <div className="border-b border-border pb-4">
-        <h1 className="text-3xl font-bold text-text-primary">Friends</h1>
-        <p className="text-text-secondary mt-1">Manage your friends and social connections.</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-border pb-4">
+        <div>
+          <h1 className="text-3xl font-bold text-text-primary">Friends</h1>
+          <p className="text-text-secondary mt-1">Manage your friends and social connections.</p>
+        </div>
+        <Link href="/friends/search">
+          <Button variant="primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="mr-2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            Find Friends
+          </Button>
+        </Link>
       </div>
 
       {requests.length > 0 && (

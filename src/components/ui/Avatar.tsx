@@ -57,6 +57,7 @@ export function Avatar({
           width={sizePx[size]}
           height={sizePx[size]}
           className="w-full h-full object-cover"
+          unoptimized
         />
       ) : (
         <span>{initials}</span>

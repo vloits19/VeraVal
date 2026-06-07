@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
 export function Footer() {
@@ -23,18 +24,15 @@ export function Footer() {
 
         {/* Links */}
         <div className="flex items-center gap-6 text-sm text-text-secondary">
-          <a href="#" className="hover:text-text-primary transition-colors">
+          <Link href="/about" className="hover:text-text-primary transition-colors">
             About
-          </a>
-          <a href="#" className="hover:text-text-primary transition-colors">
+          </Link>
+          <Link href="/privacy" className="hover:text-text-primary transition-colors">
             Privacy
-          </a>
-          <a href="#" className="hover:text-text-primary transition-colors">
+          </Link>
+          <Link href="/terms" className="hover:text-text-primary transition-colors">
             Terms
-          </a>
-          <a href="#" className="hover:text-text-primary transition-colors">
-            GitHub
-          </a>
+          </Link>
         </div>
 
         {/* Copyright */}

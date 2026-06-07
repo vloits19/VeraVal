@@ -10,7 +10,7 @@ export async function updateProfile(data: Partial<User>) {
   
   if (!user) throw new Error("Not authenticated");
   
-  const { username, avatar, banner, bio, accent_color } = data;
+  const { username, avatar, banner, bio, accent_color, preferences } = data;
   
   // Strict Validation to prevent database bloat
   if (bio && bio.length > 500) throw new Error("Bio must be 500 characters or less");
@@ -18,7 +18,7 @@ export async function updateProfile(data: Partial<User>) {
   if (username && username.length < 3) throw new Error("Username must be at least 3 characters");
 
   const updates = Object.fromEntries(
-    Object.entries({ username, avatar, banner, bio, accent_color }).filter(([k, v]) => v !== undefined && k)
+    Object.entries({ username, avatar, banner, bio, accent_color, preferences }).filter(([k, v]) => v !== undefined && k)
   );
   
   const { error } = await supabase
@@ -56,19 +56,26 @@ export async function getUserProfile(username: string): Promise<User | null> {
 export async function getUserStats(userId: string) {
   const supabase = await createClient();
   
-  const { count: animeCount } = await supabase
-    .from("anime_lists")
-    .select("*", { count: 'exact', head: true })
-    .eq("user_id", userId);
-    
-  const { count: friendCount } = await supabase
-    .from("friends")
-    .select("*", { count: 'exact', head: true })
-    .or(`user1_id.eq.${userId},user2_id.eq.${userId}`);
+  const [
+    { count: animeCount },
+    { count: friendCount },
+    { count: watchingCount },
+    { count: completedCount },
+    { count: ptwCount }
+  ] = await Promise.all([
+    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId),
+    supabase.from("friends").select("*", { count: 'exact', head: true }).or(`user1_id.eq.${userId},user2_id.eq.${userId}`),
+    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "watching"),
+    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "completed"),
+    supabase.from("anime_lists").select("*", { count: 'exact', head: true }).eq("user_id", userId).eq("status", "plan_to_watch")
+  ]);
     
   return {
     animeCount: animeCount || 0,
-    friendCount: friendCount || 0
+    friendCount: friendCount || 0,
+    watchingCount: watchingCount || 0,
+    completedCount: completedCount || 0,
+    planToWatchCount: ptwCount || 0
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
@@ -10,12 +10,28 @@ const NO_SIDEBAR_ROUTES = ["/login", "/register"];
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const saved = localStorage.getItem("veraval-sidebar-minimized");
+    if (saved === "true") {
+      setIsMinimized(true);
+    }
+  }, []);
+
+  const handleToggleMinimize = () => {
+    setIsMinimized((prev) => {
+      const next = !prev;
+      localStorage.setItem("veraval-sidebar-minimized", String(next));
+      return next;
+    });
+  };
 
   const showSidebar = !NO_SIDEBAR_ROUTES.includes(pathname);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" data-sidebar-minimized={isMinimized ? "true" : "false"}>
       <Navbar
         onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
         isSidebarOpen={sidebarOpen}
@@ -25,6 +41,8 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         <Sidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
+          isMinimized={isMinimized}
+          onToggleMinimize={handleToggleMinimize}
         />
       )}
 

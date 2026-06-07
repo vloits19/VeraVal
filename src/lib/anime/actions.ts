@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import type { AnimeListEntry } from "@/types";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "@/lib/notifications/actions";
 
 export async function getAnimeStatus(animeId: number): Promise<AnimeListEntry | null> {
   const supabase = await createClient();
@@ -25,11 +26,41 @@ export async function getAnimeStatus(animeId: number): Promise<AnimeListEntry | 
   return data as AnimeListEntry | null;
 }
 
+/** Helper: get all friend user IDs for the current user */
+async function getFriendIds(userId: string): Promise<string[]> {
+  const supabase = await createClient();
+  
+  const [{ data: asUser1 }, { data: asUser2 }] = await Promise.all([
+    supabase.from("friends").select("user2_id").eq("user1_id", userId),
+    supabase.from("friends").select("user1_id").eq("user2_id", userId),
+  ]);
+
+  const ids: string[] = [];
+  if (asUser1) ids.push(...asUser1.map(f => f.user2_id));
+  if (asUser2) ids.push(...asUser2.map(f => f.user1_id));
+  return ids;
+}
+
+const STATUS_LABELS: Record<string, string> = {
+  watching: "Watching",
+  completed: "Completed",
+  plan_to_watch: "Plan to Watch",
+  dropped: "Dropped",
+  not_interested: "Not Interested",
+};
+
 export async function updateAnimeStatus(animeId: number, status: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) throw new Error("Not authenticated");
+
+  // Get user profile for notification
+  const { data: profile } = await supabase
+    .from("users")
+    .select("username")
+    .eq("id", user.id)
+    .single();
 
   const { error } = await supabase
     .from("anime_lists")
@@ -42,6 +73,25 @@ export async function updateAnimeStatus(animeId: number, status: string) {
     console.error("Error updating anime status:", error);
     throw new Error(error.message);
   }
+
+  // Notify friends about this activity (non-blocking)
+  const username = profile?.username || "Someone";
+  const statusLabel = STATUS_LABELS[status] || status;
+  const friendIds = await getFriendIds(user.id);
+  
+  // Fire and forget — don't block the response
+  Promise.all(
+    friendIds.map(friendId =>
+      createNotification(
+        friendId,
+        "friend_activity",
+        "Friend Activity",
+        `${username} added an anime to ${statusLabel}.`,
+        String(animeId),
+        `/anime/${animeId}`
+      )
+    )
+  ).catch(console.error);
 
   revalidatePath(`/anime/${animeId}`);
 }

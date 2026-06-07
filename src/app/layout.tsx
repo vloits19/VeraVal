@@ -24,6 +24,9 @@ export const metadata: Metadata = {
   description:
     "A simpler, cleaner alternative to MyAnimeList. Track, discover, and enjoy anime your way.",
   keywords: ["anime", "tracker", "myanimelist", "veraval", "anime list"],
+  icons: {
+    icon: "/VeraValIcon.svg",
+  },
 };
 
 export default function RootLayout({

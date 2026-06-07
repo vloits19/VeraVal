@@ -1,14 +1,67 @@
-"use client";
-
 import React from "react";
+import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { Avatar } from "@/components/ui/Avatar";
-import { useTheme } from "@/hooks/useTheme";
+import { ThemeToggleSection } from "@/components/profile/ThemeToggleSection";
+import { DangerZoneSection } from "@/components/profile/DangerZoneSection";
+import { NotificationSettings } from "@/components/profile/NotificationSettings";
+import { SettingsForm } from "@/components/profile/SettingsForm";
+import { ShowcaseManager } from "@/components/profile/ShowcaseManager";
+import { getShowcase } from "@/lib/profile/showcaseActions";
+import { getAnimeByIds } from "@/lib/anilist/client";
+import { createClient } from "@/lib/supabase/server";
 
-export default function SettingsPage() {
-  const { theme, toggleTheme } = useTheme();
+export default async function SettingsPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  // Fetch full profile from users table
+  const { data: profile } = await supabase
+    .from("users")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+
+  const [showcaseData, { data: userAnimeList }] = await Promise.all([
+    getShowcase(user.id),
+    supabase.from("anime_lists").select("anime_id, status").eq("user_id", user.id),
+  ]);
+
+  const allIds = Array.from(new Set([
+    ...(showcaseData.map(s => s.anime_id)),
+    ...(userAnimeList?.map(a => a.anime_id) || [])
+  ]));
+
+  let anilistData: any[] = [];
+  if (allIds.length > 0) {
+    // Note: AniList pagination might be needed if allIds > 50
+    // But for beta, slicing to 50 is fine to prevent errors
+    anilistData = await getAnimeByIds(allIds.slice(0, 50));
+  }
+
+  const animeDetails: Record<number, any> = {};
+  for (const anime of anilistData) {
+    animeDetails[anime.id] = {
+      id: anime.id,
+      title: anime.title.english || anime.title.romaji || anime.title.native,
+      coverImage: anime.coverImage.extraLarge || anime.coverImage.large || anime.coverImage.medium,
+      score: anime.averageScore ? Number((anime.averageScore / 10).toFixed(1)) : null,
+    };
+  }
+
+  if (!profile) {
+    // If the profile wasn't created properly, we should handle this gracefully
+    // But for now, we just pass what we can or show an error
+    return (
+      <div className="max-w-2xl p-4 bg-danger/10 text-danger rounded-[var(--radius-md)] border border-danger/20">
+        <h2 className="font-bold">Profile not found.</h2>
+        <p className="text-sm">Please make sure you have run the database migrations in Supabase and your profile was created successfully.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl space-y-8 animate-fade-in">
@@ -37,38 +90,8 @@ export default function SettingsPage() {
           Account
         </h2>
 
-        <Card padding="lg" className="space-y-6">
-          {/* Avatar */}
-          <div className="flex items-center gap-4">
-            <Avatar fallback="Guest User" size="lg" />
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-text-primary">
-                Profile Photo
-              </p>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm">
-                  Upload
-                </Button>
-                <Button variant="ghost" size="sm">
-                  Remove
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="h-px bg-border" />
-
-          {/* Fields */}
-          <div className="space-y-4">
-            <Input label="Username" placeholder="animefan42" />
-            <Input label="Email" type="email" placeholder="you@example.com" />
-            <Input
-              label="Bio"
-              placeholder="Tell us about your anime taste..."
-            />
-          </div>
-
-          <Button>Save Changes</Button>
+        <Card padding="lg">
+          <SettingsForm user={profile as any} />
         </Card>
       </section>
 
@@ -97,78 +120,25 @@ export default function SettingsPage() {
           Appearance
         </h2>
 
-        <Card padding="lg" className="space-y-6">
-          {/* Theme toggle */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-text-primary">Theme</p>
-              <p className="text-xs text-text-muted">
-                Choose between dark and light mode
-              </p>
-            </div>
-            <button
-              id="settings-theme-toggle"
-              onClick={toggleTheme}
-              className={`
-                relative w-14 h-7 rounded-full transition-colors cursor-pointer
-                ${theme === "dark" ? "bg-accent" : "bg-border-hover"}
-              `}
-            >
-              <span
-                className={`
-                  absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md
-                  transition-transform duration-200
-                  ${theme === "dark" ? "left-[calc(100%-1.625rem)]" : "left-0.5"}
-                `}
-              />
-            </button>
-          </div>
+        <ThemeToggleSection />
+      </section>
 
-          <div className="h-px bg-border" />
+      {/* ── Profile Showcase ── */}
+      <section className="space-y-4">
+        <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-accent">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="9" y1="21" x2="9" y2="9" />
+          </svg>
+          Profile Showcase
+        </h2>
 
-          {/* Theme preview */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => theme !== "dark" && toggleTheme()}
-              className={`
-                p-4 rounded-[var(--radius-md)] border-2 text-left cursor-pointer
-                transition-all
-                ${
-                  theme === "dark"
-                    ? "border-accent bg-accent/5"
-                    : "border-border hover:border-border-hover"
-                }
-              `}
-            >
-              <div className="w-full h-16 rounded bg-[#0a0a0f] mb-3 flex items-center gap-1.5 px-3">
-                <div className="w-2 h-2 rounded-full bg-[#7c3aed]" />
-                <div className="w-8 h-1.5 rounded bg-[#27273a]" />
-              </div>
-              <p className="text-sm font-medium text-text-primary">Dark</p>
-              <p className="text-xs text-text-muted">Default theme</p>
-            </button>
-
-            <button
-              onClick={() => theme !== "light" && toggleTheme()}
-              className={`
-                p-4 rounded-[var(--radius-md)] border-2 text-left cursor-pointer
-                transition-all
-                ${
-                  theme === "light"
-                    ? "border-accent bg-accent/5"
-                    : "border-border hover:border-border-hover"
-                }
-              `}
-            >
-              <div className="w-full h-16 rounded bg-[#f8f9fc] mb-3 flex items-center gap-1.5 px-3">
-                <div className="w-2 h-2 rounded-full bg-[#7c3aed]" />
-                <div className="w-8 h-1.5 rounded bg-[#e4e4e7]" />
-              </div>
-              <p className="text-sm font-medium text-text-primary">Light</p>
-              <p className="text-xs text-text-muted">For bright environments</p>
-            </button>
-          </div>
-        </Card>
+        <ShowcaseManager 
+          initialShowcase={showcaseData}
+          userAnimeList={userAnimeList || []}
+          animeDetails={animeDetails}
+        />
       </section>
 
       {/* ── Notifications Section ── */}
@@ -189,34 +159,13 @@ export default function SettingsPage() {
           Notifications
         </h2>
 
-        <Card padding="lg" className="space-y-4">
-          {[
-            {
-              title: "Episode Reminders",
-              desc: "Get notified when new episodes air",
-            },
-            {
-              title: "Recommendations",
-              desc: "Receive anime recommendations based on your list",
-            },
-            {
-              title: "Social Updates",
-              desc: "Get notified about friend activity",
-            },
-          ].map((item) => (
-            <div key={item.title} className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-text-primary">
-                  {item.title}
-                </p>
-                <p className="text-xs text-text-muted">{item.desc}</p>
-              </div>
-              <button className="relative w-10 h-5 rounded-full bg-border-hover transition-colors cursor-pointer">
-                <span className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform" />
-              </button>
-            </div>
-          ))}
-        </Card>
+        <NotificationSettings 
+          initialPreferences={profile.preferences || {
+            notify_episodes: true,
+            notify_recommendations: true,
+            notify_social: true
+          }} 
+        />
       </section>
 
       {/* ── Danger Zone ── */}
@@ -237,21 +186,7 @@ export default function SettingsPage() {
           Danger Zone
         </h2>
 
-        <Card padding="lg" className="border-danger/20">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-text-primary">
-                Delete Account
-              </p>
-              <p className="text-xs text-text-muted">
-                Permanently delete your account and all associated data.
-              </p>
-            </div>
-            <Button variant="danger" size="sm">
-              Delete Account
-            </Button>
-          </div>
-        </Card>
+        <DangerZoneSection />
       </section>
     </div>
   );

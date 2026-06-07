@@ -4,9 +4,18 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn("Supabase URL or Anon Key is missing. Using placeholder values for build/prerender safety.");
+    }
+  }
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl || "https://placeholder.supabase.co",
+    supabaseKey || "placeholder-anon-key",
     {
       cookies: {
         getAll() {

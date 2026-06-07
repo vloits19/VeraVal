@@ -71,37 +71,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Get initial session
     const initSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (session?.user) {
-        setAuthUser(session.user);
-        await fetchProfile(session.user.id);
+        if (session?.user) {
+          setAuthUser(session.user);
+          await fetchProfile(session.user.id);
+        }
+      } catch (err) {
+        console.warn("Failed to get initial session:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initSession();
 
     // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setAuthUser(session.user);
-        if (event === "SIGNED_IN") {
-          await fetchProfile(session.user.id);
+    let subscription: any = null;
+    try {
+      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          setAuthUser(session.user);
+          if (event === "SIGNED_IN") {
+            await fetchProfile(session.user.id);
+          }
+        } else {
+          setAuthUser(null);
+          setProfile(null);
         }
-      } else {
-        setAuthUser(null);
-        setProfile(null);
-      }
-      setLoading(false);
-    });
+        setLoading(false);
+      });
+      subscription = data.subscription;
+    } catch (err) {
+      console.warn("Failed to subscribe to auth state changes:", err);
+    }
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, [supabase, fetchProfile]);
 

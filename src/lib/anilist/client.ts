@@ -161,23 +161,26 @@ export async function searchAnime(
     format = null,
     page = 1,
     perPage = 20,
-    sort = ["POPULARITY_DESC"],
+    sort = ["TRENDING_DESC", "POPULARITY_DESC"],
   } = options;
 
-  const isSearch = search && search.trim().length > 0;
-  const query = isSearch ? SEARCH_QUERY : TRENDING_QUERY;
+  const query = SEARCH_QUERY;
 
   const variables: Record<string, unknown> = {
     page,
     perPage,
   };
 
+  const isSearch = search && search.trim().length > 0;
   if (isSearch) {
     variables.search = search.trim();
     variables.sort = ["SEARCH_MATCH"];
-    if (format) variables.format = format;
   } else {
     variables.sort = sort;
+  }
+
+  if (format) {
+    variables.format = format;
   }
 
   const response = await fetch(ANILIST_API_URL, {

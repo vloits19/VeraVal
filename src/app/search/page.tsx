@@ -35,9 +35,12 @@ export default function SearchPage() {
   // Read initial values from URL query string if present
   const initialQuery = searchParams.get("q") || "";
   const initialFormat = (searchParams.get("format") as MediaFormat) || "ALL";
+  const initialPage = Number(searchParams.get("page")) || 1;
 
   const [query, setQuery] = useState(initialQuery);
   const [selectedFormat, setSelectedFormat] = useState<MediaFormat | "ALL">(initialFormat);
+  const [page, setPage] = useState(initialPage);
+  const [hasNextPage, setHasNextPage] = useState(false);
 
   // Debounce the query string for API calls (500ms delay)
   const debouncedQuery = useDebounce(query, 500);
@@ -47,6 +50,16 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const handleQueryChange = (val: string) => {
+    setQuery(val);
+    setPage(1);
+  };
+
+  const handleFormatChange = (val: MediaFormat | "ALL") => {
+    setSelectedFormat(val);
+    setPage(1);
+  };
+
   const fetchResults = useCallback(async () => {
     try {
       setLoading(true);
@@ -55,6 +68,7 @@ export default function SearchPage() {
       const params = new URLSearchParams();
       if (debouncedQuery) params.set("q", debouncedQuery);
       if (selectedFormat && selectedFormat !== "ALL") params.set("format", selectedFormat);
+      if (page > 1) params.set("page", String(page));
 
       const newUrl = params.toString() ? `/search?${params.toString()}` : "/search";
       window.history.replaceState(null, "", newUrl);
@@ -62,11 +76,13 @@ export default function SearchPage() {
       const data = await searchAnime({
         search: debouncedQuery,
         format: selectedFormat === "ALL" ? null : selectedFormat,
+        page: page,
         perPage: 24, // Get more results
       });
 
       setResults(data.Page.media);
       setTotal(data.Page.pageInfo.total);
+      setHasNextPage(data.Page.pageInfo.hasNextPage);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : "Failed to search anime";
       setError(errorMessage);
@@ -74,7 +90,7 @@ export default function SearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedQuery, selectedFormat]);
+  }, [debouncedQuery, selectedFormat, page]);
 
   // Run search when debounced inputs change
   useEffect(() => {
@@ -113,7 +129,7 @@ export default function SearchPage() {
         <div className="flex-1 max-w-2xl">
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleQueryChange(e.target.value)}
             placeholder="Search by title..."
             icon={
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -129,7 +145,7 @@ export default function SearchPage() {
           {FORMAT_FILTERS.map((format) => (
             <button
               key={format.label}
-              onClick={() => setSelectedFormat(format.value)}
+              onClick={() => handleFormatChange(format.value)}
               className={`
                 px-4 py-1.5 text-xs font-medium rounded-[var(--radius-full)]
                 transition-all cursor-pointer
@@ -181,85 +197,112 @@ export default function SearchPage() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {results.map((anime) => {
-            const title = getTitle(anime.title);
-            const coverImage = getCoverImage(anime.coverImage);
-            const score = formatScore(anime.averageScore);
-            const formatStr = formatMediaFormat(anime.format);
+        <div className="space-y-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            {results.map((anime) => {
+              const title = getTitle(anime.title);
+              const coverImage = getCoverImage(anime.coverImage);
+              const score = formatScore(anime.averageScore);
+              const formatStr = formatMediaFormat(anime.format);
 
-            return (
-              <Link key={anime.id} href={`/anime/${anime.id}`} className="block h-full">
-                <Card
-                  hover
-                  glow
-                  padding="none"
-                  className="overflow-hidden group flex flex-col h-full"
-                >
-                  {/* Cover Image */}
-                  <div className="relative aspect-[2/3] bg-bg-secondary w-full">
-                  {coverImage ? (
-                    <Image
-                      src={coverImage}
-                      alt={title}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
-                      quality={75}
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-text-muted">
-                      No Image
+              return (
+                <Link key={anime.id} href={`/anime/${anime.id}`} className="block h-full">
+                  <Card
+                    hover
+                    glow
+                    padding="none"
+                    className="overflow-hidden group flex flex-col h-full"
+                  >
+                    {/* Cover Image */}
+                    <div className="relative aspect-[2/3] bg-bg-secondary w-full">
+                      {coverImage ? (
+                        <Image
+                          src={coverImage}
+                          alt={title}
+                          fill
+                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, (max-width: 1280px) 20vw, 16vw"
+                          quality={75}
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-text-muted">
+                          No Image
+                        </div>
+                      )}
+
+                      {/* Badges Overlay */}
+                      <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
+                        {score && (
+                          <span className="px-1.5 py-0.5 text-[10px] font-bold bg-black/70 text-white rounded-[var(--radius-sm)] backdrop-blur-md flex items-center gap-1">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                            {score}
+                          </span>
+                        )}
+                        <span className="px-1.5 py-0.5 text-[10px] font-medium bg-black/70 text-white rounded-[var(--radius-sm)] backdrop-blur-md ml-auto">
+                          {formatStr}
+                        </span>
+                      </div>
+
+                      {/* Gradient overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
+                        <Button variant="primary" size="sm" className="w-full opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
+                          Add to List
+                        </Button>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Badges Overlay */}
-                  <div className="absolute top-2 left-2 right-2 flex justify-between items-start">
-                    {score && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-bold bg-black/70 text-white rounded-[var(--radius-sm)] backdrop-blur-md flex items-center gap-1">
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="text-amber-400">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                        </svg>
-                        {score}
-                      </span>
-                    )}
-                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-black/70 text-white rounded-[var(--radius-sm)] backdrop-blur-md ml-auto">
-                      {formatStr}
-                    </span>
-                  </div>
+                    {/* Info */}
+                    <div className="p-3 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3
+                          className="text-sm font-semibold text-text-primary line-clamp-2 leading-tight mb-1"
+                          title={title}
+                        >
+                          {title}
+                        </h3>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-text-muted mt-2">
+                        <span className="truncate max-w-[60%]">
+                          {anime.genres[0] || "Unknown"}
+                        </span>
+                        <span>
+                          {anime.episodes ? `${anime.episodes} eps` : anime.status === "RELEASING" ? "Airing" : "TBA"}
+                        </span>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
 
-                  {/* Gradient overlay on hover */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <Button variant="primary" size="sm" className="w-full opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all">
-                      Add to List
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="p-3 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3
-                      className="text-sm font-semibold text-text-primary line-clamp-2 leading-tight mb-1"
-                      title={title}
-                    >
-                      {title}
-                    </h3>
-                  </div>
-                  <div className="flex items-center justify-between text-[11px] text-text-muted mt-2">
-                    <span className="truncate max-w-[60%]">
-                      {anime.genres[0] || "Unknown"}
-                    </span>
-                    <span>
-                      {anime.episodes ? `${anime.episodes} eps` : anime.status === "RELEASING" ? "Airing" : "TBA"}
-                    </span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-            );
-          })}
+          {/* Pagination Controls */}
+          {(page > 1 || hasNextPage) && (
+            <div className="flex items-center justify-center gap-4 pt-6 border-t border-border">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1 || loading}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-text-secondary">
+                Page <span className="text-text-primary font-medium">{page}</span>
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setPage((prev) => prev + 1)}
+                disabled={!hasNextPage || loading}
+              >
+                Next
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

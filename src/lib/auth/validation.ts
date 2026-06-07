@@ -34,13 +34,21 @@ export function validateUsername(username: string): string | null {
 }
 
 export function validateLoginForm(fields: {
-  email: string;
+  identifier: string;
   password: string;
 }): ValidationResult {
   const errors: Record<string, string> = {};
 
-  const emailErr = validateEmail(fields.email);
-  if (emailErr) errors.email = emailErr;
+  const identifier = fields.identifier || "";
+  if (!identifier.trim()) {
+    errors.identifier = "Email or Username is required.";
+  } else if (identifier.includes("@")) {
+    const emailErr = validateEmail(identifier);
+    if (emailErr) errors.identifier = emailErr;
+  } else {
+    const usernameErr = validateUsername(identifier);
+    if (usernameErr) errors.identifier = usernameErr;
+  }
 
   const passErr = validatePassword(fields.password);
   if (passErr) errors.password = passErr;

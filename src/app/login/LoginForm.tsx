@@ -19,10 +19,10 @@ export function LoginForm() {
     setFieldErrors({});
 
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const identifier = formData.get("identifier") as string;
     const password = formData.get("password") as string;
 
-    const result = await loginUser({ email, password });
+    const result = await loginUser({ identifier, password });
 
     if (result.success) {
       showToast("Successfully logged in!", "success");
@@ -45,16 +45,16 @@ export function LoginForm() {
       )}
 
       <Input
-        name="email"
-        label="Email"
-        type="email"
-        placeholder="you@example.com"
-        autoComplete="email"
-        error={fieldErrors.email}
+        name="identifier"
+        label="Email or Username"
+        type="text"
+        placeholder="you@example.com or username"
+        autoComplete="username"
+        error={fieldErrors.identifier}
         icon={
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-            <polyline points="22,6 12,13 2,6" />
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
           </svg>
         }
       />

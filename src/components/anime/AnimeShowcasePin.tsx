@@ -59,7 +59,9 @@ export function AnimeShowcasePin({ animeId, initialFavorite, initialPinned, hasL
         const { updateProfile } = await import('@/lib/profile/actions');
         await updateProfile({
           preferences: {
-            ...profile.preferences,
+            notify_episodes: profile.preferences?.notify_episodes ?? true,
+            notify_recommendations: profile.preferences?.notify_recommendations ?? true,
+            notify_social: profile.preferences?.notify_social ?? true,
             friend_banner_anime_id: newVal ? animeId : null,
           }
         });

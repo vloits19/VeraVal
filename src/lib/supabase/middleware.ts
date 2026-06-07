@@ -5,6 +5,7 @@ const PROTECTED_ROUTES = ["/profile", "/settings"];
 const AUTH_ROUTES = ["/login", "/register"];
 
 export async function updateSession(request: NextRequest) {
+  console.log(`[UPDATE_SESSION] Starting for: ${request.nextUrl.pathname}`);
   let supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,
@@ -39,8 +40,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  console.log(`[UPDATE_SESSION] supabase client created. Calling getUser()...`);
   // Refresh the auth session
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+  console.log(`[UPDATE_SESSION] getUser returned user:`, user?.id, `error:`, getUserError);
 
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
     request.nextUrl.pathname.startsWith(route)

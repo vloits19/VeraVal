@@ -19,13 +19,26 @@ export async function registerUser(formData: {
   confirmPassword: string;
 }): Promise<AuthFormState> {
   try {
+    console.log("[REGISTER_USER] Starting register for:", formData.email);
     // 1. Validate
     const { valid, errors } = validateRegisterForm(formData);
     if (!valid) {
+      console.log("[REGISTER_USER] Validation failed:", errors);
       return { success: false, error: null, fieldErrors: errors };
     }
 
     const supabase = await createClient();
+    console.log("[REGISTER_USER] Supabase client created");
+
+    // 1.1 Validate Environment Variables Early
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error("[REGISTER_USER] Missing Supabase environment variables.");
+      return { 
+        success: false, 
+        error: "Missing Supabase configuration. Please verify environment variables (NEXT_PUBLIC_SUPABASE_URL).", 
+        fieldErrors: {} 
+      };
+    }
 
     // 2. Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -62,18 +75,16 @@ export async function registerUser(formData: {
     });
 
     if (profileError) {
-      console.error("Profile insertion error:", profileError);
-      // If profile creation fails, check if it's a duplicate username
-      if (profileError.message.includes("duplicate") || profileError.code === "23505") {
-        return {
-          success: false,
-          error: null,
-          fieldErrors: { username: "This username is already taken." },
-        };
+      console.error("Profile creation error:", profileError);
+      
+      let errorMessage = "Account created, but profile setup failed. Please contact support.";
+      if (profileError.message && profileError.message.toLowerCase().includes("fetch failed")) {
+        errorMessage = "Account created, but database network connection failed during profile setup.";
       }
+
       return {
         success: false,
-        error: "Account created but profile setup failed. Please contact support.",
+        error: errorMessage,
         fieldErrors: {},
       };
     }
@@ -97,13 +108,26 @@ export async function loginUser(formData: {
   password: string;
 }): Promise<AuthFormState> {
   try {
+    console.log("[LOGIN_USER] Starting login for:", formData.identifier);
     // 1. Validate
     const { valid, errors } = validateLoginForm(formData);
     if (!valid) {
+      console.log("[LOGIN_USER] Validation failed:", errors);
       return { success: false, error: null, fieldErrors: errors };
     }
 
     const supabase = await createClient();
+    console.log("[LOGIN_USER] Supabase client created");
+
+    // 1.1 Validate Environment Variables Early
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error("[LOGIN_USER] Missing Supabase environment variables.");
+      return { 
+        success: false, 
+        error: "Missing Supabase configuration. Please verify environment variables (NEXT_PUBLIC_SUPABASE_URL).", 
+        fieldErrors: {} 
+      };
+    }
 
     let email = formData.identifier.trim();
 
@@ -117,9 +141,15 @@ export async function loginUser(formData: {
 
       if (dbError) {
         console.error("Database error looking up username:", dbError);
+        
+        let errorMessage = "Database error during login. Please try again.";
+        if (dbError.message && dbError.message.toLowerCase().includes("fetch failed")) {
+          errorMessage = "Network connection to database failed. Please check your Supabase URL.";
+        }
+
         return {
           success: false,
-          error: "Database error during login. Please try again.",
+          error: errorMessage,
           fieldErrors: {},
         };
       }
@@ -135,16 +165,20 @@ export async function loginUser(formData: {
       email = userData.email;
     }
 
+    console.log("[LOGIN_USER] Calling signInWithPassword for email:", email);
     // 3. Sign in
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password: formData.password,
     });
+    console.log("[LOGIN_USER] signInWithPassword returned error:", error);
 
     if (error) {
       let message = error.message;
-      if (error.message.includes("Invalid login credentials")) {
-        message = "Invalid email or password.";
+      if (message.toLowerCase().includes("fetch failed")) {
+        message = "Authentication endpoint unavailable. Network connection failed. Please check your Supabase URL.";
+      } else if (message === "Invalid login credentials") {
+        message = "Email/Username or password is incorrect.";
       }
       return { success: false, error: message, fieldErrors: {} };
     }

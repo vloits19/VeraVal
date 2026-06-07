@@ -3,17 +3,8 @@ import { updateSession } from "@/lib/supabase/middleware";
 
 // In-memory rate limiting store (cleared on server restart or Edge eviction)
 // Useful for basic single-instance DoS protection.
+// Note: Edge isolates are short-lived, so memory leaks are not a significant issue here.
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-// Cleanup old entries every 5 minutes to prevent memory leaks
-setInterval(() => {
-  const now = Date.now();
-  for (const [ip, data] of rateLimitMap.entries()) {
-    if (now > data.resetTime) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}, 5 * 60 * 1000);
 
 export async function middleware(request: NextRequest) {
   // 1. Rate Limiting for Mutations (POST requests)

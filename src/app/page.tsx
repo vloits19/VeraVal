@@ -90,9 +90,6 @@ export default async function HomePage() {
         </div>
 
         <div className="space-y-4">
-          <span className="inline-block px-4 py-1.5 text-xs font-medium text-accent bg-accent/10 border border-accent/20 rounded-full">
-            Currently in development
-          </span>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight">
             Track.{" "}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-400">

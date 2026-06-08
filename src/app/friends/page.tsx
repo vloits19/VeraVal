@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getFriendsList, getPendingRequests } from "@/lib/friends/actions";
+import { getFriendsList, getPendingRequests, getRecommendedUsers, getFriendshipStatus } from "@/lib/friends/actions";
 import { createClient } from "@/lib/supabase/server";
 import { getAnimeByIds } from "@/lib/anilist/client";
 import { Card } from "@/components/ui/Card";
@@ -12,6 +12,14 @@ import { RoleManagerDropdown } from "@/components/friends/RoleManagerDropdown";
 export default async function FriendsPage() {
   const friends = await getFriendsList();
   const requests = await getPendingRequests();
+  const recommendations = await getRecommendedUsers();
+
+  const recsWithStatus = await Promise.all(
+    recommendations.map(async (u) => {
+      const status = await getFriendshipStatus(u.id);
+      return { ...u, friendship: status };
+    })
+  );
 
   // Fetch favorite anime for each friend
   const supabase = await createClient();
@@ -113,6 +121,42 @@ export default async function FriendsPage() {
                 </Link>
                 <div className="flex gap-2">
                   <FriendActionButton targetUserId={req.sender.id} initialStatus="request_received" requestId={req.id} />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {recsWithStatus.length > 0 && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold text-text-primary tracking-wide uppercase border-l-4 border-accent pl-3">
+            Recommended Users
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recsWithStatus.map(u => (
+              <Card key={u.id} padding="sm" className="flex items-center justify-between group">
+                <Link href={`/profile/${u.username}`} className="flex items-center gap-3">
+                  <div className="relative w-12 h-12 rounded-full overflow-hidden bg-bg-secondary border-2 border-transparent group-hover:border-accent transition-colors" style={{ borderColor: u.accent_color }}>
+                    {u.avatar ? (
+                      <Image src={u.avatar} alt={u.username} fill sizes="48px" quality={80} className="object-cover" loading="lazy" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xl font-bold bg-bg-card">
+                        {u.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="font-bold text-text-primary group-hover:text-accent transition-colors">{u.username}</span>
+                  </div>
+                </Link>
+                <div className="flex gap-2">
+                  <FriendActionButton 
+                    targetUserId={u.id} 
+                    initialStatus={u.friendship.status} 
+                    requestId={u.friendship.requestId} 
+                    friendId={u.friendship.friendId}
+                  />
                 </div>
               </Card>
             ))}

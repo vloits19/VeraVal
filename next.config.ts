@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "frame-ancestors 'self' https://trusted-domain.com",
+            value: "frame-ancestors *",
           },
           {
             key: "X-Content-Type-Options",

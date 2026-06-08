@@ -242,3 +242,28 @@ export async function getPendingRequests() {
     sender: Array.isArray(req.sender) ? req.sender[0] : req.sender
   }));
 }
+
+export async function getRecommendedUsers() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  // Get current friends to exclude them
+  const friends = await getFriendsList();
+  const friendIds = friends.map(f => f.user.id);
+  const excludeIds = [user.id, ...friendIds];
+
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, username, avatar, accent_color")
+    .not("id", "in", `(${excludeIds.join(',')})`)
+    .limit(50);
+
+  if (error || !users) return [];
+  
+  // Shuffle array server-side
+  const shuffled = users.sort(() => 0.5 - Math.random());
+  
+  // Return top 5
+  return shuffled.slice(0, 5);
+}

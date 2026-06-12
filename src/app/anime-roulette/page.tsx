@@ -19,6 +19,7 @@ import {
   formatScore,
   formatMediaFormat,
 } from "@/lib/anilist/client";
+import { playShuffleTick, playRevealChime } from "@/lib/audio";
 
 /* ── Constants ── */
 const SHUFFLE_TITLES = [
@@ -129,6 +130,7 @@ export default function AnimeRoulettePage() {
 
       const tick = () => {
         count++;
+        playShuffleTick();
         setShuffleTitle(SHUFFLE_TITLES[Math.floor(Math.random() * SHUFFLE_TITLES.length)]);
 
         if (count >= maxTicks) {
@@ -178,6 +180,7 @@ export default function AnimeRoulettePage() {
 
       const anime = fetchResult.anime;
       setResult(anime);
+      playRevealChime();
       setState("result");
 
       // Add to history

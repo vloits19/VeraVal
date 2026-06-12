@@ -11,6 +11,7 @@ export const APP_TAGLINE = "Track. Discover. Enjoy.";
 export const NAV_ROUTES = [
   { label: "Home", href: "/", icon: "home" },
   { label: "Search", href: "/search", icon: "search" },
+  { label: "Anime Roulette", href: "/anime-roulette", icon: "roulette" },
   { label: "Profile", href: "/profile", icon: "user" },
   { label: "Settings", href: "/settings", icon: "settings" },
 ] as const;

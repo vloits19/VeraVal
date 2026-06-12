@@ -51,6 +51,19 @@ function NavIcon({ icon, active }: { icon: string; active: boolean }) {
           <path d="M16 3.13a4 4 0 010 7.75" />
         </svg>
       );
+    case "roulette":
+      return (
+        <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="2" y="2" width="20" height="20" rx="3" />
+          <circle cx="8" cy="8" r="1.2" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="8" r="1.2" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+          <circle cx="8" cy="16" r="1.2" fill="currentColor" stroke="none" />
+          <circle cx="16" cy="16" r="1.2" fill="currentColor" stroke="none" />
+          <path d="M21 2l2-1" strokeWidth="1.5" />
+          <path d="M22 5l1.5-.5" strokeWidth="1.5" />
+        </svg>
+      );
     case "settings":
       return (
         <svg className={cls} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

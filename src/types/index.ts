@@ -62,25 +62,7 @@ export interface AnimeListEntry {
   created_at: string;
 }
 
-/** Navigation item */
-export interface NavItem {
-  label: string;
-  href: string;
-  icon?: React.ReactNode;
-}
 
-/** API response wrapper */
-export interface ApiResponse<T> {
-  data: T | null;
-  error: string | null;
-  loading: boolean;
-}
-
-/** Page metadata */
-export interface PageMeta {
-  title: string;
-  description: string;
-}
 
 /** Component size variants */
 export type Size = "sm" | "md" | "lg";

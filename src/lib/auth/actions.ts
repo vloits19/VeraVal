@@ -19,19 +19,13 @@ export async function registerUser(formData: {
   confirmPassword: string;
 }): Promise<AuthFormState> {
   try {
-    console.log("[REGISTER_USER] Starting register for:", formData.email);
-    console.log("DEBUG [Registration] Raw Password:", `"${formData.password}"`);
-    console.log("DEBUG [Registration] Raw Confirm Password:", `"${formData.confirmPassword}"`);
-    
     // 1. Validate
     const { valid, errors } = validateRegisterForm(formData);
     if (!valid) {
-      console.log("[REGISTER_USER] Validation failed:", errors);
       return { success: false, error: null, fieldErrors: errors };
     }
 
     const supabase = await createClient();
-    console.log("[REGISTER_USER] Supabase client created");
 
     // 1.1 Validate Environment Variables Early
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -111,16 +105,13 @@ export async function loginUser(formData: {
   password: string;
 }): Promise<AuthFormState> {
   try {
-    console.log("[LOGIN_USER] Starting login for:", formData.identifier);
     // 1. Validate
     const { valid, errors } = validateLoginForm(formData);
     if (!valid) {
-      console.log("[LOGIN_USER] Validation failed:", errors);
       return { success: false, error: null, fieldErrors: errors };
     }
 
     const supabase = await createClient();
-    console.log("[LOGIN_USER] Supabase client created");
 
     // 1.1 Validate Environment Variables Early
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -168,13 +159,11 @@ export async function loginUser(formData: {
       email = userData.email;
     }
 
-    console.log("[LOGIN_USER] Calling signInWithPassword for email:", email);
     // 3. Sign in
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password: formData.password,
     });
-    console.log("[LOGIN_USER] signInWithPassword returned error:", error);
 
     if (error) {
       let message = error.message;

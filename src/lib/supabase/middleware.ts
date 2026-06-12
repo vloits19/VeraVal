@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_ROUTES = ["/profile", "/settings"];
 const AUTH_ROUTES = ["/login", "/register"];
+const BANNED_ROUTE = "/banned";
 
 export async function updateSession(request: NextRequest) {
   console.log(`[UPDATE_SESSION] Starting for: ${request.nextUrl.pathname}`);
@@ -68,11 +69,21 @@ export async function updateSession(request: NextRequest) {
     if (!request.nextUrl.pathname.startsWith("/auth/callback")) {
       const { data: profile } = await supabase
         .from("users")
-        .select("id")
+        .select("id, is_banned")
         .eq("id", user.id)
         .maybeSingle();
       
       const hasProfile = !!profile;
+
+      // Handle Banned Users
+      if (hasProfile && profile.is_banned && request.nextUrl.pathname !== BANNED_ROUTE) {
+        return createRedirect(BANNED_ROUTE);
+      }
+
+      // Prevent non-banned users from accessing /banned
+      if (hasProfile && !profile.is_banned && request.nextUrl.pathname === BANNED_ROUTE) {
+        return createRedirect("/");
+      }
 
       // Force user to complete onboarding if profile doesn't exist
       if (!hasProfile && request.nextUrl.pathname !== "/onboarding") {

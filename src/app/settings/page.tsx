@@ -5,6 +5,7 @@ import { ThemeToggleSection } from "@/components/profile/ThemeToggleSection";
 import { DangerZoneSection } from "@/components/profile/DangerZoneSection";
 import { NotificationSettings } from "@/components/profile/NotificationSettings";
 import { SettingsForm } from "@/components/profile/SettingsForm";
+import { AdminUserPanel } from "@/components/admin/AdminUserPanel";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
@@ -143,6 +144,26 @@ export default async function SettingsPage() {
 
         <DangerZoneSection />
       </section>
+
+      {/* ── Admin Panel (Conditional) ── */}
+      {profile.role === "admin" && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-accent flex items-center gap-2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+            Admin Panel
+          </h2>
+          <AdminUserPanel />
+        </section>
+      )}
     </div>
   );
 }

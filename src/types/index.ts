@@ -12,6 +12,8 @@ export interface User {
   bio: string;
   accent_color: string;
   role?: string;
+  is_banned?: boolean;
+  ban_reason?: string | null;
   preferences?: {
     notify_episodes: boolean;
     notify_recommendations: boolean;

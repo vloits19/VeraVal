@@ -119,6 +119,13 @@ export default function AnimeRoulettePage() {
     setHistory(loadHistory());
   }, []);
 
+  /* ── Clear history ── */
+  const clearHistory = useCallback(() => {
+    setHistory([]);
+    localStorage.removeItem(HISTORY_KEY);
+    showToast("History reset", "success");
+  }, [showToast]);
+
 
 
   /* ── Shuffle animation ── */
@@ -165,6 +172,7 @@ export default function AnimeRoulettePage() {
         format: format !== "ALL" ? format : null,
         genres,
         episodeLength,
+        excludedIds: history.map((h) => h.id),
       };
 
       const fetchPromise = getRouletteAnime(filters, surprise);
@@ -197,7 +205,7 @@ export default function AnimeRoulettePage() {
         return updated;
       });
     },
-    [format, genres, episodeLength, runShuffleAnimation]
+    [format, genres, episodeLength, runShuffleAnimation, history]
   );
 
   /* ── Share ── */
@@ -659,9 +667,18 @@ export default function AnimeRoulettePage() {
       {history.length > 0 && (
         <div className="space-y-4 pt-4 border-t border-border">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-text-primary">
-              Recent Roulette Results
-            </h3>
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-semibold text-text-primary">
+                Recent Roulette Results
+              </h3>
+              <button
+                onClick={clearHistory}
+                className="text-xs px-2.5 py-1 bg-danger/10 text-danger hover:bg-danger/20 rounded-[var(--radius-sm)] transition-colors font-medium cursor-pointer"
+                title="Reset history so these anime can be rolled again"
+              >
+                Reset
+              </button>
+            </div>
             <span className="text-xs text-text-muted">
               {history.length} / {MAX_HISTORY}
             </span>

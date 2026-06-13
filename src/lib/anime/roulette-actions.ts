@@ -11,6 +11,7 @@ export interface RouletteFilters {
   format?: MediaFormat | "ALL" | null;
   genres?: string[];
   episodeLength?: "any" | "short" | "medium" | "long";
+  excludedIds?: number[];
 }
 
 export interface RouletteResult {
@@ -76,6 +77,10 @@ export async function getRouletteAnime(
 ): Promise<RouletteResult> {
   try {
     const excludedIds = await getExcludedAnimeIds();
+
+    if (filters.excludedIds) {
+      filters.excludedIds.forEach((id) => excludedIds.add(id));
+    }
 
     // Random page between 1-8 for variety
     const randomPage = Math.floor(Math.random() * 8) + 1;

@@ -510,6 +510,7 @@ export default function AnimeRoulettePage() {
                       quality={85}
                       className="object-cover animate-roulette-poster"
                       priority
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-text-muted min-h-[300px]">
@@ -682,6 +683,7 @@ export default function AnimeRoulettePage() {
                       quality={60}
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                       loading="lazy"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-text-muted text-xs">

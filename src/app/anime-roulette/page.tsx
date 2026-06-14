@@ -9,7 +9,11 @@ import { Card } from "@/components/ui/Card";
 import { useToast } from "@/components/ui/Toast";
 import {
   getRouletteAnime,
+  getRouletteHistory,
+  addRouletteHistory,
+  clearRouletteHistory,
   type RouletteFilters,
+  type RouletteHistoryEntry,
 } from "@/lib/anime/roulette-actions";
 import {
   type AniListMedia,
@@ -66,31 +70,10 @@ const EPISODE_LENGTH_OPTIONS = [
   { label: "Long (27+)", value: "long" as const },
 ];
 
-const HISTORY_KEY = "veraval-roulette-history";
 const MAX_HISTORY = 10;
 
 /* ── Types ── */
 type RouletteState = "idle" | "shuffling" | "result";
-
-interface HistoryEntry {
-  id: number;
-  title: string;
-  coverImage: string;
-}
-
-/* ── Helpers ── */
-function loadHistory(): HistoryEntry[] {
-  try {
-    const raw = localStorage.getItem(HISTORY_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveHistory(history: HistoryEntry[]) {
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)));
-}
 
 /* ======================================================================== */
 /*  MAIN COMPONENT                                                          */
@@ -104,8 +87,11 @@ export default function AnimeRoulettePage() {
   const [result, setResult] = useState<AniListMedia | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [shuffleTitle, setShuffleTitle] = useState(SHUFFLE_TITLES[0]);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [history, setHistory] = useState<RouletteHistoryEntry[]>([]);
+  const [totalDiscovered, setTotalDiscovered] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isEmptyPool, setIsEmptyPool] = useState(false);
 
   /* Filters */
   const [format, setFormat] = useState<MediaFormat | "ALL">("ALL");
@@ -116,13 +102,21 @@ export default function AnimeRoulettePage() {
 
   /* Load history on mount */
   useEffect(() => {
-    setHistory(loadHistory());
-  }, []);
+    if (profile) {
+      getRouletteHistory().then(({ history, total }) => {
+        setHistory(history);
+        setTotalDiscovered(total);
+      });
+    }
+  }, [profile]);
 
   /* ── Clear history ── */
-  const clearHistory = useCallback(() => {
+  const confirmClearHistory = useCallback(async () => {
+    await clearRouletteHistory();
     setHistory([]);
-    localStorage.removeItem(HISTORY_KEY);
+    setTotalDiscovered(0);
+    setShowResetConfirm(false);
+    setIsEmptyPool(false);
     showToast("History reset", "success");
   }, [showToast]);
 
@@ -172,13 +166,19 @@ export default function AnimeRoulettePage() {
         format: format !== "ALL" ? format : null,
         genres,
         episodeLength,
-        excludedIds: history.map((h) => h.id),
+        excludedIds: history.map((h) => h.anime_id),
       };
 
       const fetchPromise = getRouletteAnime(filters, surprise);
 
       // Wait for both animation and fetch
       const [, fetchResult] = await Promise.all([animationPromise, fetchPromise]);
+
+      if (fetchResult.isEmptyPool) {
+        setIsEmptyPool(true);
+        setState("idle");
+        return;
+      }
 
       if (fetchResult.error || !fetchResult.anime) {
         setError(fetchResult.error || "No anime found. Try different filters.");
@@ -190,20 +190,27 @@ export default function AnimeRoulettePage() {
       setResult(anime);
       playRevealChime();
       setState("result");
+      setIsEmptyPool(false);
 
-      // Add to history
-      const entry: HistoryEntry = {
-        id: anime.id,
-        title: getTitle(anime.title),
-        coverImage: getCoverImage(anime.coverImage),
-      };
+      const title = getTitle(anime.title);
+      const cover = getCoverImage(anime.coverImage);
 
+      // Add to database asynchronously
+      addRouletteHistory(anime.id, title, cover).catch(console.error);
+
+      // Add to history locally
       setHistory((prev) => {
-        const filtered = prev.filter((h) => h.id !== entry.id);
-        const updated = [entry, ...filtered].slice(0, MAX_HISTORY);
-        saveHistory(updated);
-        return updated;
+        const newEntry: RouletteHistoryEntry = {
+          id: String(Date.now()), // temp ID for UI
+          anime_id: anime.id,
+          title,
+          cover_image: cover,
+          created_at: new Date().toISOString()
+        };
+        const filtered = prev.filter((h) => h.anime_id !== anime.id);
+        return [newEntry, ...filtered].slice(0, MAX_HISTORY);
       });
+      setTotalDiscovered(prev => prev + 1);
     },
     [format, genres, episodeLength, runShuffleAnimation, history]
   );
@@ -409,41 +416,64 @@ export default function AnimeRoulettePage() {
         {/* IDLE STATE */}
         {state === "idle" && (
           <div className="flex flex-col items-center gap-4 animate-fade-in">
-            {error && (
-              <div className="px-4 py-3 rounded-[var(--radius-md)] bg-danger/10 border border-danger/20 text-danger text-sm max-w-md text-center">
-                {error}
-              </div>
+            {isEmptyPool ? (
+              <Card padding="lg" className="w-full max-w-md text-center space-y-4 border-accent/20 bg-accent/5">
+                <div className="w-12 h-12 rounded-full bg-accent/20 text-accent flex items-center justify-center mx-auto mb-2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-bold text-text-primary">You've discovered every available anime for the current filters.</h3>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                  <Button variant="primary" onClick={() => setShowResetConfirm(true)}>
+                    Reset History
+                  </Button>
+                  <Button variant="ghost" onClick={() => setIsEmptyPool(false)}>
+                    Change Filters
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <>
+                {error && (
+                  <div className="px-4 py-3 rounded-[var(--radius-md)] bg-danger/10 border border-danger/20 text-danger text-sm max-w-md text-center">
+                    {error}
+                  </div>
+                )}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  onClick={() => handleRandomize(false)}
+                  className="text-base px-10 py-4 shadow-lg hover:shadow-[var(--shadow-glow)]"
+                  icon={
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="16 3 21 3 21 8" />
+                      <line x1="4" y1="20" x2="21" y2="3" />
+                      <polyline points="21 16 21 21 16 21" />
+                      <line x1="15" y1="15" x2="21" y2="21" />
+                      <line x1="4" y1="4" x2="9" y2="9" />
+                    </svg>
+                  }
+                >
+                  Randomize Anime
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={() => handleRandomize(true)}
+                  className="group"
+                  icon={
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:animate-spin">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  }
+                >
+                  Surprise Me
+                </Button>
+              </>
             )}
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={() => handleRandomize(false)}
-              className="text-base px-10 py-4 shadow-lg hover:shadow-[var(--shadow-glow)]"
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="16 3 21 3 21 8" />
-                  <line x1="4" y1="20" x2="21" y2="3" />
-                  <polyline points="21 16 21 21 16 21" />
-                  <line x1="15" y1="15" x2="21" y2="21" />
-                  <line x1="4" y1="4" x2="9" y2="9" />
-                </svg>
-              }
-            >
-              Randomize Anime
-            </Button>
-            <Button
-              variant="ghost"
-              size="md"
-              onClick={() => handleRandomize(true)}
-              className="group"
-              icon={
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="group-hover:animate-spin">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              }
-            >
-              Surprise Me
-            </Button>
           </div>
         )}
 
@@ -671,29 +701,29 @@ export default function AnimeRoulettePage() {
               <h3 className="text-lg font-semibold text-text-primary">
                 Recent Roulette Results
               </h3>
+              <span className="text-xs px-2 py-0.5 bg-accent/10 text-accent rounded-[var(--radius-full)] font-medium">
+                Anime Discovered: {totalDiscovered}
+              </span>
               <button
-                onClick={clearHistory}
-                className="text-xs px-2.5 py-1 bg-danger/10 text-danger hover:bg-danger/20 rounded-[var(--radius-sm)] transition-colors font-medium cursor-pointer"
+                onClick={() => setShowResetConfirm(true)}
+                className="text-xs px-2.5 py-1 bg-danger/10 text-danger hover:bg-danger/20 rounded-[var(--radius-sm)] transition-colors font-medium cursor-pointer ml-auto"
                 title="Reset history so these anime can be rolled again"
               >
                 Reset
               </button>
             </div>
-            <span className="text-xs text-text-muted">
-              {history.length} / {MAX_HISTORY}
-            </span>
           </div>
           <div className="flex overflow-x-auto gap-3 pb-2 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory">
             {history.map((entry) => (
               <Link
                 key={entry.id}
-                href={`/anime/${entry.id}`}
+                href={`/anime/${entry.anime_id}`}
                 className="group flex-shrink-0 w-28 snap-start"
               >
                 <div className="relative aspect-[2/3] rounded-[var(--radius-md)] overflow-hidden bg-bg-secondary border border-border group-hover:border-accent transition-colors">
-                  {entry.coverImage ? (
+                  {entry.cover_image ? (
                     <Image
-                      src={entry.coverImage}
+                      src={entry.cover_image}
                       alt={entry.title}
                       fill
                       sizes="112px"
@@ -714,6 +744,26 @@ export default function AnimeRoulettePage() {
               </Link>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* ── Reset Confirmation Dialog ── */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in px-4">
+          <Card padding="lg" className="max-w-sm w-full space-y-5 animate-scale-in">
+            <h3 className="text-xl font-bold text-text-primary">Reset Roulette History?</h3>
+            <p className="text-sm text-text-secondary">
+              All anime will become eligible again. This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end pt-2">
+              <Button variant="ghost" onClick={() => setShowResetConfirm(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" className="bg-danger hover:bg-danger/90 text-white border-none shadow-[var(--shadow-glow)]" onClick={confirmClearHistory}>
+                Confirm
+              </Button>
+            </div>
+          </Card>
         </div>
       )}
     </div>

@@ -17,10 +17,11 @@ export interface RouletteFilters {
 export interface RouletteResult {
   anime: AniListMedia | null;
   error?: string;
+  isEmptyPool?: boolean;
 }
 
 /**
- * Fetch the user's excluded anime IDs (dropped + not_interested).
+ * Fetch the user's excluded anime IDs (dropped + not_interested + roulette_history).
  */
 async function getExcludedAnimeIds(): Promise<Set<number>> {
   const supabase = await createClient();
@@ -30,18 +31,97 @@ async function getExcludedAnimeIds(): Promise<Set<number>> {
 
   if (!user) return new Set();
 
-  const { data, error } = await supabase
-    .from("anime_lists")
-    .select("anime_id")
-    .eq("user_id", user.id)
-    .in("status", ["dropped", "not_interested"]);
+  const [listRes, historyRes] = await Promise.all([
+    supabase
+      .from("anime_lists")
+      .select("anime_id")
+      .eq("user_id", user.id)
+      .in("status", ["dropped", "not_interested"]),
+    supabase
+      .from("roulette_history")
+      .select("anime_id")
+      .eq("user_id", user.id)
+  ]);
 
-  if (error) {
-    console.error("Error fetching excluded anime:", error);
-    return new Set();
+  const set = new Set<number>();
+
+  if (listRes.data) {
+    listRes.data.forEach((row) => set.add(row.anime_id));
+  }
+  if (historyRes.data) {
+    historyRes.data.forEach((row) => set.add(row.anime_id));
   }
 
-  return new Set((data || []).map((row) => row.anime_id));
+  return set;
+}
+
+export interface RouletteHistoryEntry {
+  id: string;
+  anime_id: number;
+  title: string;
+  cover_image: string;
+  created_at: string;
+}
+
+export async function addRouletteHistory(animeId: number, title: string, coverImage: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase.from("roulette_history").insert({
+    user_id: user.id,
+    anime_id: animeId,
+    title,
+    cover_image: coverImage
+  });
+
+  if (error) {
+    console.error("Error adding to roulette history:", error);
+    return { error: error.message };
+  }
+  return { success: true };
+}
+
+export async function getRouletteHistory() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { history: [], total: 0 };
+
+  const { count, error: countError } = await supabase
+    .from("roulette_history")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  const { data, error } = await supabase
+    .from("roulette_history")
+    .select("id, anime_id, title, cover_image, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  if (error || countError) {
+    console.error("Error fetching roulette history:", error || countError);
+    return { history: [], total: 0 };
+  }
+
+  return { history: data as RouletteHistoryEntry[], total: count || 0 };
+}
+
+export async function clearRouletteHistory() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Unauthorized" };
+
+  const { error } = await supabase
+    .from("roulette_history")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error clearing roulette history:", error);
+    return { error: error.message };
+  }
+  return { success: true };
 }
 
 /**
@@ -133,11 +213,13 @@ export async function getRouletteAnime(
         sort: ["POPULARITY_DESC"],
       });
 
-      candidates = fallbackData.Page.media.filter(
-        (a) => !excludedIds.has(a.id)
-      );
+      const fallbackMedia = fallbackData.Page.media;
+      candidates = fallbackMedia.filter((a) => !excludedIds.has(a.id));
 
       if (candidates.length === 0) {
+        if (fallbackMedia.length > 0) {
+          return { anime: null, error: "You've discovered every available anime for the current filters.", isEmptyPool: true };
+        }
         return { anime: null, error: "No anime found matching your criteria. Try adjusting your filters." };
       }
     }

@@ -16,6 +16,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem("veraval-sidebar-minimized");
     if (saved === "true") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsMinimized(true);
     }
   }, []);

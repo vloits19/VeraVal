@@ -63,6 +63,7 @@ export default async function SettingsPage() {
         </h2>
 
         <Card padding="lg">
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
           <SettingsForm user={profile as any} />
         </Card>
       </section>

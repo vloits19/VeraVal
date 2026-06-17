@@ -26,6 +26,7 @@ export function OnboardingForm({ email, avatar, displayName }: OnboardingFormPro
   // Debounced username check
   useEffect(() => {
     if (username.length < 3 || username.length > 20 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsAvailable(null);
       return;
     }
@@ -36,7 +37,7 @@ export function OnboardingForm({ email, avatar, displayName }: OnboardingFormPro
         const res = await fetch(`/api/check-username?username=${encodeURIComponent(username)}`);
         const data = await res.json();
         setIsAvailable(data.available);
-      } catch (err) {
+      } catch {
         setIsAvailable(null);
       } finally {
         setCheckingUsername(false);

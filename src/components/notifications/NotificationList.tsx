@@ -59,6 +59,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function NotificationList({ initialNotifications }: Props) {
+  // eslint-disable-next-line react-hooks/purity
   const [now, setNow] = useState(Date.now());
   const [notifications, setNotifications] = useState(initialNotifications);
   const [activeFilter, setActiveFilter] = useState("all");

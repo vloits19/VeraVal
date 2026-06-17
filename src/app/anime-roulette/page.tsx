@@ -425,7 +425,7 @@ export default function AnimeRoulettePage() {
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-bold text-text-primary">You've discovered every available anime for the current filters.</h3>
+                <h3 className="text-lg font-bold text-text-primary">You&apos;ve discovered every available anime for the current filters.</h3>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
                   <Button variant="primary" onClick={() => setShowResetConfirm(true)}>
                     Reset History

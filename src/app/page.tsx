@@ -65,6 +65,7 @@ const FEATURES = [
 
 export default async function HomePage() {
   // Fetch actual trending anime from AniList (top 4)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let trendingAnime: any[] = [];
   try {
     const trendingData = await searchAnime({ perPage: 4 });

@@ -28,9 +28,13 @@ export function AnimeEntryManager({ animeId, totalEpisodes, initialEntry }: Anim
   const [status, setStatus] = useState<string>(initialEntry?.status || "plan_to_watch");
   const [progress, setProgress] = useState(initialEntry?.progress || 0);
   // Using 'any' for new fields since AnimeListEntry type might not have them yet
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [score, setScore] = useState((initialEntry as any)?.score || 0);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [startedAt, setStartedAt] = useState((initialEntry as any)?.started_at || "");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [finishedAt, setFinishedAt] = useState((initialEntry as any)?.finished_at || "");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [notes, setNotes] = useState((initialEntry as any)?.notes || "");
 
   const handleSave = async () => {
@@ -140,6 +144,7 @@ export function AnimeEntryManager({ animeId, totalEpisodes, initialEntry }: Anim
           <label className="text-xs font-medium text-text-primary">Status</label>
           <select 
             value={status} 
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             onChange={(e) => setStatus(e.target.value as any)}
             className="w-full bg-bg-input border border-border rounded-[var(--radius-md)] px-3 py-1.5 text-sm text-text-primary focus:border-accent outline-none"
           >

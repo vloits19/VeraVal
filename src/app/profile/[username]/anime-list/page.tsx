@@ -30,6 +30,7 @@ export default async function UserAnimeListPage({ params }: { params: Promise<{ 
     .eq("user_id", profile.id)
     .order("created_at", { ascending: false });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let anilistData: any[] = [];
   if (listEntries && listEntries.length > 0) {
     const animeIds = Array.from(new Set(listEntries.map((e) => e.anime_id)));

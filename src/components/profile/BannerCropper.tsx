@@ -14,12 +14,14 @@ interface BannerCropperProps {
 export function BannerCropper({ imageFile, onClose, onCropComplete }: BannerCropperProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Convert File to Object URL for the cropper
   const [imageSrc] = useState(() => URL.createObjectURL(imageFile));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleCropComplete = useCallback((_croppedArea: any, croppedAreaPixels: any) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);

@@ -6,6 +6,7 @@ let audioCtx: AudioContext | null = null;
 function getAudioContext() {
   if (typeof window === "undefined") return null;
   if (!audioCtx) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
   }
   // Resume context if it was suspended (browser policy)

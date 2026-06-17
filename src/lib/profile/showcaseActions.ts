@@ -90,14 +90,7 @@ export async function updateShowcaseOrder(category: string, itemIds: string[]) {
 
   if (!user) throw new Error("Not authenticated");
 
-  // Perform a batch update for the display_order
-  const updates = itemIds.map((id, index) => ({
-    id,
-    user_id: user.id,
-    anime_id: 0, // Ignored in update since we only update display_order, but we must construct a valid update query or use multiple queries.
-    category,
-    display_order: index,
-  }));
+
 
   // Supabase JS doesn't have a direct batch update easily without upserting with all required columns.
   // We can do it sequentially since max is 5 items, which is very fast.

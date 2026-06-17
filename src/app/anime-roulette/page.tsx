@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/components/providers/AuthProvider";

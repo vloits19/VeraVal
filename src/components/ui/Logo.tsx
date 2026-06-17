@@ -5,7 +5,6 @@ import { useTheme } from "@/hooks/useTheme";
 
 interface LogoProps {
   size?: "sm" | "md" | "lg";
-  showText?: boolean;
   className?: string;
 }
 
@@ -15,7 +14,7 @@ const sizeMap = {
   lg: { height: 40 },
 };
 
-export function Logo({ size = "md", showText = true, className = "" }: LogoProps) {
+export function Logo({ size = "md", className = "" }: LogoProps) {
   const { height } = sizeMap[size];
   const { theme } = useTheme();
 
@@ -26,6 +25,7 @@ export function Logo({ size = "md", showText = true, className = "" }: LogoProps
 
   return (
     <div className={`inline-flex items-center gap-2.5 ${className}`}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={logoSrc}
         alt="VeraVal Logo"

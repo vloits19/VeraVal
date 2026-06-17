@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import Image from "next/image";
 import { User } from "@/types";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -45,8 +46,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
         banner: bannerUrl,
       });
       setSuccess("Profile updated successfully!");
-    } catch (err: any) {
-      setError(err.message || "Failed to update profile");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update profile");
     } finally {
       setIsSaving(false);
     }
@@ -114,8 +115,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
       // Auto save the avatar update
       await updateProfile({ avatar: data.publicUrl });
       setSuccess("Avatar updated successfully!");
-    } catch (err: any) {
-      setError(err.message || "Failed to upload avatar");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload avatar");
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -153,8 +154,8 @@ export function SettingsForm({ user }: SettingsFormProps) {
       
       await updateProfile({ banner: data.publicUrl });
       setSuccess("Banner updated successfully!");
-    } catch (err: any) {
-      setError(err.message || "Failed to upload banner");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload banner");
     } finally {
       setIsUploading(false);
       if (bannerInputRef.current) {
@@ -246,7 +247,7 @@ export function SettingsForm({ user }: SettingsFormProps) {
             
             {bannerUrl && (
               <div className="relative w-full h-24 rounded-[var(--radius-md)] overflow-hidden border border-border">
-                <img src={bannerUrl} alt="Banner Preview" className="w-full h-full object-cover" />
+                <Image src={bannerUrl} alt="Banner Preview" fill className="object-cover" unoptimized />
               </div>
             )}
             

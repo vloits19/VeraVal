@@ -10,10 +10,9 @@ interface Props {
   targetUserId: string;
   initialStatus: FriendshipStatus;
   requestId?: string;
-  friendId?: string;
 }
 
-export function FriendActionButton({ targetUserId, initialStatus, requestId, friendId }: Props) {
+export function FriendActionButton({ targetUserId, initialStatus, requestId }: Props) {
   const { profile } = useAuth();
   const { showToast } = useToast();
   const [isPending, startTransition] = useTransition();

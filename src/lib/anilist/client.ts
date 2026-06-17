@@ -108,50 +108,7 @@ query SearchAnime($search: String, $format: MediaFormat, $genres: [String], $pag
 }
 `;
 
-/** Trending query (no search term) */
-const TRENDING_QUERY = `
-query TrendingAnime($page: Int, $perPage: Int) {
-  Page(page: $page, perPage: $perPage) {
-    pageInfo {
-      total
-      currentPage
-      lastPage
-      hasNextPage
-    }
-    media(type: ANIME, sort: TRENDING_DESC, isAdult: false) {
-      id
-      title {
-        romaji
-        english
-        native
-      }
-      coverImage {
-        extraLarge
-        large
-        medium
-        color
-      }
-      bannerImage
-      format
-      episodes
-      status
-      averageScore
-      meanScore
-      genres
-      studios(isMain: true) {
-        nodes {
-          name
-          isAnimationStudio
-        }
-      }
-      season
-      seasonYear
-      description
-      siteUrl
-    }
-  }
-}
-`;
+
 
 export type MediaFormat = "TV" | "MOVIE" | "OVA" | "ONA" | "SPECIAL" | "MUSIC" | null;
 

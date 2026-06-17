@@ -19,7 +19,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   not_interested: "Not Interested",
 };
 
-export async function AnimeShowcase({ userId, username }: AnimeShowcaseProps) {
+export async function AnimeShowcase({ userId }: AnimeShowcaseProps) {
   const supabase = await createClient();
   
   // Fetch pinned and favorite items directly from anime_lists
@@ -62,6 +62,7 @@ export async function AnimeShowcase({ userId, username }: AnimeShowcaseProps) {
   const categories = ["favorites", "watching", "completed", "plan_to_watch", "dropped", "not_interested"];
 
   // Sort function to order items by recently updated
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sortByRecent = (a: any, b: any) => {
     return new Date(b.updated_at || 0).getTime() - new Date(a.updated_at || 0).getTime();
   };

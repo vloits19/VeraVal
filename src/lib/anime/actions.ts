@@ -179,6 +179,7 @@ export async function updateAnimeEntry(data: AnimeEntryData) {
     .eq("id", user.id)
     .single();
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const payload: any = {
     user_id: user.id,
     anime_id: data.animeId,

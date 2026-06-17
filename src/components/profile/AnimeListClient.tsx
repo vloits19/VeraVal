@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 
 interface AnimeListClientProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   initialItems: any[];
 }
 

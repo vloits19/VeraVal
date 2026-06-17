@@ -26,7 +26,7 @@ export default function AboutPage() {
           <li>Seamlessly search through a massive database powered by AniList.</li>
           <li>Organize anime into customizable categories (Watching, Completed, Plan to Watch, etc).</li>
           <li>Showcase your absolute favorites on your public profile.</li>
-          <li>Connect with friends and see what they're watching.</li>
+          <li>Connect with friends and see what they&apos;re watching.</li>
         </ul>
 
         <h2 className="text-xl font-semibold text-text-primary mt-8">Open Source</h2>

@@ -59,10 +59,16 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 };
 
 export function NotificationList({ initialNotifications }: Props) {
+  const [now, setNow] = useState(Date.now());
   const [notifications, setNotifications] = useState(initialNotifications);
   const [activeFilter, setActiveFilter] = useState("all");
   const [isPending, startTransition] = useTransition();
   const { showToast } = useToast();
+
+  React.useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const filtered = activeFilter === "all"
     ? notifications
@@ -75,7 +81,7 @@ export function NotificationList({ initialNotifications }: Props) {
       try {
         await markAsRead(id);
         setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
-      } catch (err) {
+      } catch {
         showToast("Failed to mark as read", "error");
       }
     });
@@ -87,7 +93,7 @@ export function NotificationList({ initialNotifications }: Props) {
         await markAllAsRead();
         setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
         showToast("All notifications marked as read", "success");
-      } catch (err) {
+      } catch {
         showToast("Failed to mark all as read", "error");
       }
     });
@@ -99,14 +105,14 @@ export function NotificationList({ initialNotifications }: Props) {
         await deleteNotification(id);
         setNotifications((prev) => prev.filter((n) => n.id !== id));
         showToast("Notification deleted", "success");
-      } catch (err) {
+      } catch {
         showToast("Failed to delete", "error");
       }
     });
   };
 
   const timeSince = (dateStr: string) => {
-    const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+    const seconds = Math.floor((now - new Date(dateStr).getTime()) / 1000);
     if (seconds < 60) return "Just now";
     if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
     if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;

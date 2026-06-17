@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -79,8 +79,8 @@ export function ShowcaseManager({ initialShowcase, userAnimeList, animeDetails }
       // We should ideally fetch the updated list or just trigger a reload
       // But Server Action revalidatePath will refresh the page props soon
       setIsAdding(false);
-    } catch (e: any) {
-      alert(e.message);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "An error occurred");
     } finally {
       setIsProcessing(false);
     }

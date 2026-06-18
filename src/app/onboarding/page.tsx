@@ -41,7 +41,7 @@ export default async function OnboardingPage() {
         {/* Header */}
         <div className="text-center space-y-4 mb-8">
           <div className="flex justify-center">
-            <Logo size="lg" showText={false} />
+            <Logo size="lg" />
           </div>
           <div className="space-y-1">
             <h1 className="text-2xl font-bold text-text-primary">

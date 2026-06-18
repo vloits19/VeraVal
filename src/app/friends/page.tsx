@@ -155,7 +155,6 @@ export default async function FriendsPage() {
                     targetUserId={u.id} 
                     initialStatus={u.friendship.status} 
                     requestId={u.friendship.requestId} 
-                    friendId={u.friendship.friendId}
                   />
                 </div>
               </Card>

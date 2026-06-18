@@ -12,6 +12,8 @@ export const size = {
 export const contentType = 'image/png';
 
 export default async function Image() {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://vera-val.fayq.my.id';
+
   return new ImageResponse(
     (
       // ImageResponse JSX element
@@ -27,20 +29,14 @@ export default async function Image() {
           fontFamily: 'sans-serif',
         }}
       >
-        {/* VeraVal Text Logo */}
-        <div
-          style={{
-            fontSize: 120,
-            fontWeight: 'bold',
-            color: '#FFFFFF',
-            marginBottom: 20,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <span style={{ color: '#E85D75' }}>Vera</span>
-          <span style={{ color: '#FFFFFF' }}>Val</span>
-        </div>
+        {/* VeraVal SVG Logo */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`${baseUrl}/VeraValDark.svg`}
+          height="140"
+          style={{ marginBottom: 40 }}
+          alt="VeraVal"
+        />
         <div
           style={{
             fontSize: 48,

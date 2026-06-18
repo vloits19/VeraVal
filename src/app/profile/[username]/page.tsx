@@ -105,7 +105,6 @@ export default async function UserProfilePage({ params }: { params: Promise<{ us
                   targetUserId={profile.id}
                   initialStatus={friendship.status}
                   requestId={friendship.requestId}
-                  friendId={friendship.friendId}
                 />
               )}
             </div>

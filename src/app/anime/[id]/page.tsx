@@ -8,6 +8,43 @@ import { AnimeEntryManager } from "@/components/anime/AnimeEntryManager";
 import { AnimeShowcasePin } from "@/components/anime/AnimeShowcasePin";
 import { AnimeCard } from "@/components/anime/AnimeCard";
 
+import { Metadata } from "next";
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const resolvedParams = await params;
+  const animeId = parseInt(resolvedParams.id, 10);
+  
+  if (isNaN(animeId)) {
+    return { title: "Anime Not Found" };
+  }
+
+  try {
+    const anime = await getAnimeById(animeId);
+    const title = getTitle(anime.title);
+    const cleanDescription = anime.description?.replace(/<[^>]*>?/gm, '') || "No description available.";
+    const coverImage = getCoverImage(anime.coverImage);
+
+    return {
+      title,
+      description: cleanDescription,
+      openGraph: {
+        title,
+        description: cleanDescription,
+        images: coverImage ? [coverImage] : [],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description: cleanDescription,
+        images: coverImage ? [coverImage] : [],
+      },
+    };
+  } catch (_error) {
+    return { title: "Anime Not Found" };
+  }
+}
+
 export default async function AnimeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const animeId = parseInt(resolvedParams.id, 10);

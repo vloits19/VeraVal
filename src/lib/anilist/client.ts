@@ -167,6 +167,7 @@ export async function searchAnime(
       Accept: "application/json",
     },
     body: JSON.stringify({ query, variables }),
+    signal: AbortSignal.timeout(8000), // Prevent Vercel 504 Bad Gateway
     next: { revalidate: 60 }, // Cache for 60 seconds
   });
 
@@ -284,6 +285,7 @@ export async function getAnimeById(id: number): Promise<AniListMedia> {
       query: GET_ANIME_QUERY,
       variables: { id },
     }),
+    signal: AbortSignal.timeout(8000), // Prevent Vercel 504 Bad Gateway
     next: { revalidate: 3600 }, // Cache for 1 hour since historical data rarely changes
   });
 
@@ -348,6 +350,7 @@ export async function getAnimeByIds(ids: number[]): Promise<AniListMedia[]> {
       query: GET_ANIME_BY_IDS_QUERY,
       variables: { ids },
     }),
+    signal: AbortSignal.timeout(8000), // Prevent Vercel 504 Bad Gateway
     next: { revalidate: 3600 },
   });
 
